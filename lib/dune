@@ -1,2 +1,3 @@
 (library
- (name ml_network_modeling))
+ (name ml_network_modeling)
+ (libraries base))

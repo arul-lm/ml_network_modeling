@@ -1,4 +1,4 @@
 (executable
  (public_name ml_network_modeling)
  (name main)
- (libraries ml_network_modeling))
+ (libraries ml_network_modeling base))
