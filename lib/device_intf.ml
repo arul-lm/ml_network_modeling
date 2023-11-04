@@ -6,4 +6,5 @@ module H100 : Device = struct
   let name = "h100"
 end
 
-type device_data = { id : int }
+(* Instance specific info *)
+type 'a device_data = { id : int (* ; device : (module Device) *) }

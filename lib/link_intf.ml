@@ -1,4 +1,5 @@
 include Device_intf
+include Switch_intf
 
 module type InterConnect = sig
   val name : string
@@ -25,10 +26,27 @@ module type IntraLink = sig
   val make : a -> b -> t
 end
 
-module type MAKEINTRALINK = functor (_ : InterConnect) -> IntraLink
+module type InterLink = sig
+  include Link
+
+  type a := (module Switch)
+  type b := (module Device)
+
+  val make : a -> b -> t
+end
 
 module MakeIntra (I : InterConnect) : IntraLink = struct
   type a = (module Device)
+  type b = (module Device)
+  type t = a * b
+
+  let name = I.name
+  let bandwidth = I.bandwidth
+  let make a b = a, b
+end
+
+module MakeInter (I : InterConnect) : InterLink = struct
+  type a = (module Switch)
   type b = (module Device)
   type t = a * b
 
@@ -42,15 +60,10 @@ module NvLinkIC : InterConnect = struct
   let bandwidth = 900
 end
 
+module InfinibandIC : InterConnect = struct
+  let name = "IB"
+  let bandwidth = 400 (* connect x NIC *)
+end
+
 module NvLink = MakeIntra (NvLinkIC)
-
-(* module NvLink : IntraLink = struct *)
-(*   let name = "nvlinkc2c" *)
-(*   let bandwidth = 900 *)
-(* end *)
-
-(* module type InterLink = sig *)
-(*   include Link *)
-
-(*   type t = (module Node) * (module Node) *)
-(* end *)
+module Infiniband = MakeInter (InfinibandIC)

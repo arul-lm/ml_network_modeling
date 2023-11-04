@@ -1,40 +1,40 @@
 include Conn_intf
 
-type t =
-  { device_pair : int * int
+type ('a, 'b) t =
+  { pair : int * int
+  ; endpoints : 'a * 'b
   ; link_id : int
   }
 
-let to_string { device_pair; link_id } =
-  let l, r = device_pair in
+let to_string { pair; link_id; _ } =
+  let l, r = pair in
   Printf.sprintf "LinkId:%d|Conn:(%d,%d)" link_id l r
 ;;
 
-let make (l, r) link_id = { device_pair = l, r; link_id }
+let make (l, r) endpoints link_id = { pair = l, r; link_id; endpoints }
 
-let all_to_all (devices : Device_intf.device_data array) =
-  let open Device_intf in
+let all_to_all xs ys =
   let link_id = ref 0 in
-  let make_conn { id = src_id } =
-    let form_conn { id = dst_id } =
+  let make_conn src_id src =
+    let form_conn dst_id tgt =
       if dst_id < src_id
       then None
       else (
-        let conn = make (src_id, dst_id) !link_id in
+        let conn = make (src_id, dst_id) (src, tgt) !link_id in
         link_id := !link_id + 1;
         Some conn)
     in
-    Base.Array.filter_map devices ~f:form_conn
+    Base.Array.filter_mapi ys ~f:form_conn
   in
-  let result = Array.map make_conn devices in
+  let result = Array.mapi make_conn xs in
   result
 ;;
 
-let connections devices ~conn_type =
+let connections xs ys ~conn_type =
   match conn_type with
-  | `AllToAll -> all_to_all devices
-
-let device_pair t = t.device_pair
-
-let link_id t = t.link_id
+  | `AllToAll -> all_to_all xs ys
 ;;
+
+let conn_pair t = t.pair
+let link_id t = t.link_id
+let endpoints t = t.endpoints
