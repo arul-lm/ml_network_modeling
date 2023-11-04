@@ -1,8 +1,7 @@
 include Device_intf
 include Link_intf
 include Conn_intf
-
-type device_data = { id : int }
+include Device_intf
 
 module type Node = sig
   val device : (module Device)

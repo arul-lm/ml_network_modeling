@@ -12,21 +12,5 @@ module DGX : Node = struct
     ds
   ;;
 
-  let connections =
-    let link_id = ref 0 in
-    (* all-to-all *)
-    let make_conn { id = src_id } =
-      let form_conn { id = dst_id } =
-        if src_id = dst_id
-        then None
-        else (
-          let conn = Conn.make (src_id, dst_id) !link_id in
-          link_id := !link_id + 1;
-          Some conn)
-      in
-      Base.Array.filter_map devices ~f:form_conn
-    in
-    let result = Array.map make_conn devices in
-    result
-  ;;
+  let connections = Conn.connections devices ~conn_type:`AllToAll
 end
