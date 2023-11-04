@@ -19,7 +19,11 @@
  (name ml_network_modeling)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune)
+ (depends
+  ocaml
+  dune
+  (yojson (>= 2.1.1))
+  (ppx_yojson_conv (>= v0.16.0)))
  (tags
   (topics "to describe" your project)))
 

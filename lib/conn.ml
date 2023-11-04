@@ -17,7 +17,7 @@ let all_to_all (devices : Device_intf.device_data array) =
   let link_id = ref 0 in
   let make_conn { id = src_id } =
     let form_conn { id = dst_id } =
-      if src_id = dst_id
+      if dst_id < src_id
       then None
       else (
         let conn = make (src_id, dst_id) !link_id in
@@ -33,4 +33,8 @@ let all_to_all (devices : Device_intf.device_data array) =
 let connections devices ~conn_type =
   match conn_type with
   | `AllToAll -> all_to_all devices
+
+let device_pair t = t.device_pair
+
+let link_id t = t.link_id
 ;;

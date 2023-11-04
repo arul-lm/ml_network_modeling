@@ -1,3 +1,5 @@
 (library
  (name ml_network_modeling)
- (libraries base))
+ (libraries base yojson)
+ (preprocess
+  (pps ppx_yojson_conv)))

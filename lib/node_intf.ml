@@ -9,4 +9,5 @@ module type Node = sig
   val intra_link : (module IntraLink)
   val connections : Conn.t array array
   val devices : device_data array
+  val intra_link_bw : int
 end
