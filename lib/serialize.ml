@@ -57,13 +57,15 @@ let link_data_of_node (module N : Node_intf.Node) =
   !result
 ;;
 
-let vertex_data_of_node (module N : Node_intf.Node) =
+let vertex_data_of_node (module N : Node_intf.Node) node_data =
+  let Node_intf.{ id = node_id; _ } = node_data in
   let result = ref [] in
+  let start = N.dev_count * node_id in
   let make_vertices vertex_type name vs =
     let make_vertex id =
-      let group = name in
+      let group = Printf.sprintf "%s_%d" name node_id in
       let name = Printf.sprintf "%s_%d" name id in
-      let vid = List.length !result in
+      let vid = start + List.length !result in
       result := { name; group; index = vid; vertex_type } :: !result
     in
     Array.iter make_vertex vs
@@ -71,15 +73,15 @@ let vertex_data_of_node (module N : Node_intf.Node) =
   let devices = Array.map (fun Device_intf.{ id } -> id) N.devices in
   let (module D) = N.device in
   make_vertices Device D.name devices;
-  (* let switches = Array.map (fun Switch_intf.{ id } -> id) N.switches in *)
-  (* let (module S) = N.switch in *)
-  (* make_vertices Switch S.name switches; *)
   !result
 ;;
 
-let serialize_node node ~file_name =
-  let links = link_data_of_node node in
-  let vertices = vertex_data_of_node node in
-  let g = yojson_of_graph { vertices; links } in
+let serialize_level1 nodes ~file_name =
+  let open Level1_intf in
+  (* let _inter_conns = DGX_L1.inter_connections nodes in *)
+  let nodes = Array.to_list nodes in
+  let vertices = Base.List.map nodes ~f:(vertex_data_of_node DGX_L1.node) in
+  let vertices = List.concat vertices in
+  let g = yojson_of_graph { vertices; links = [] } in
   Yojson.Safe.to_file file_name g
 ;;
