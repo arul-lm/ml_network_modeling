@@ -13,7 +13,7 @@ type vertex_type =
 type link_data =
   { source : int
   ; target : int
-  ; value : int
+  ; distance : int
   ; index : int
   ; link_type : link_type
   ; link_id : int
@@ -35,6 +35,9 @@ type graph =
 [@@deriving yojson]
 
 let link_data_of_node (module N : Node_intf.Node) =
+  let (module IA) = N.intra_link in
+  (* let (module IR) = N.inter_link in *)
+  (* let max_bw = Int.max IA.bandwidth IR.bandwidth in *)
   let result = ref [] in
   let handle_conns link_type bw conns =
     let unwind_conn dsts =
@@ -43,16 +46,14 @@ let link_data_of_node (module N : Node_intf.Node) =
         let link_id = Conn.link_id dst in
         let lid = List.length !result in
         result
-        := { value = bw; source; target; index = lid; link_type; link_id } :: !result
+        := { distance = bw; source; target; index = lid; link_type; link_id } :: !result
       in
       Array.iter make_link dsts
     in
     Array.iter unwind_conn conns
   in
-  let (module IA) = N.intra_link in
   handle_conns Intra IA.bandwidth N.intra_connections;
-  let (module IR) = N.inter_link in
-  handle_conns Inter IR.bandwidth N.inter_connections;
+  (* handle_conns Inter IR.bandwidth N.inter_connections; *)
   !result
 ;;
 
@@ -60,18 +61,19 @@ let vertex_data_of_node (module N : Node_intf.Node) =
   let result = ref [] in
   let make_vertices vertex_type name vs =
     let make_vertex id =
+      let group = name in
       let name = Printf.sprintf "%s_%d" name id in
       let vid = List.length !result in
-      result := { name; group = name; index = vid; vertex_type } :: !result
+      result := { name; group; index = vid; vertex_type } :: !result
     in
     Array.iter make_vertex vs
   in
   let devices = Array.map (fun Device_intf.{ id } -> id) N.devices in
   let (module D) = N.device in
   make_vertices Device D.name devices;
-  let switches = Array.map (fun Switch_intf.{ id } -> id) N.switches in
-  let (module S) = N.switch in
-  make_vertices Switch S.name switches;
+  (* let switches = Array.map (fun Switch_intf.{ id } -> id) N.switches in *)
+  (* let (module S) = N.switch in *)
+  (* make_vertices Switch S.name switches; *)
   !result
 ;;
 

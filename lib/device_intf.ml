@@ -7,4 +7,4 @@ module H100 : Device = struct
 end
 
 (* Instance specific info *)
-type 'a device_data = { id : int (* ; device : (module Device) *) }
+type 'a device_data = { id : int }
