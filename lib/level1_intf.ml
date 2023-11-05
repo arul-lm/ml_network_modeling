@@ -20,7 +20,7 @@ module type Level1 = sig
 
   val inter_connections
     :  (module Node) node_data array
-    -> ((module RailSwitch) rail_data, (module Node) node_data) Conn.t array array
+    -> int * ((module RailSwitch) rail_data, (module Node) node_data) Conn.t array array
 end
 
 module MakeInter (I : InterConnect) : InterLink = struct

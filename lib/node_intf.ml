@@ -10,7 +10,7 @@ module type Node = sig
   val intra_link : (module IntraLink)
 
   val intra_connections
-    : ((module Device) device_data, (module Device) device_data) Conn.t array array
+    : int * ((module Device) device_data, (module Device) device_data) Conn.t array array
 
   val devices : (module Device) device_data array
 end

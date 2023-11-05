@@ -5,7 +5,13 @@ module type Connection = sig
 
   val make : int * int -> 'a * 'b -> int -> ('a, 'b) t
   val to_string : ('a, 'b) t -> string
-  val connections : 'a array -> 'b array -> conn_type:conn_type -> ('a, 'b) t array array
+
+  val connections
+    :  'a array
+    -> 'b array
+    -> conn_type:conn_type
+    -> int * ('a, 'b) t array array
+
   val conn_pair : ('a, 'b) t -> int * int
   val link_id : ('a, 'b) t -> int
   val endpoints : ('a, 'b) t -> 'a * 'b

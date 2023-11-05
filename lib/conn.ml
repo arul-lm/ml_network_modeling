@@ -22,7 +22,7 @@ let all_to_all xs ys =
   let link_id = ref 0 in
   let make_conn src_id src =
     let form_conn dst_id tgt =
-      if dst_id < src_id
+      if dst_id = src_id
       then None
       else (
         let conn = make (src_id, dst_id) (src, tgt) !link_id in
@@ -32,7 +32,7 @@ let all_to_all xs ys =
     Base.Array.filter_mapi ys ~f:form_conn
   in
   let result = Array.mapi make_conn xs in
-  result
+  !link_id, result
 ;;
 
 let connections xs ys ~conn_type =
