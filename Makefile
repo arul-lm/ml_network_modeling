@@ -13,3 +13,6 @@ clean:
 
 run:
 	@dune exec ml_network_modeling
+
+install:
+	opam install . --deps-only

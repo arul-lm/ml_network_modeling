@@ -15,10 +15,7 @@ module type Node = sig
   val devices : (module Device) device_data array
 end
 
-type node_data =
-  { id : int
-  ; node : (module Node)
-  }
+type 'a node_data = { id : int }
 
 module DGX : Node = struct
   let name = "dgx"
@@ -29,4 +26,7 @@ module DGX : Node = struct
   let intra_connections = Conn.connections devices devices ~conn_type:`AllToAll
 end
 
-let make_nodes node n = Array.init n (fun id -> { id; node })
+let make_dgx n =
+  let result : (module Node) node_data array = Array.init n (fun id -> { id }) in
+  result
+;;

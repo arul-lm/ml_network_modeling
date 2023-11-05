@@ -1,4 +1,5 @@
 include Conn_intf
+
 (* conn id - vertex id *)
 (* conn id is not port id *)
 (* 2 nodes of 8 devices *)
