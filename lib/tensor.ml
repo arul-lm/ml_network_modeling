@@ -10,3 +10,7 @@ let device t = t.device
 let dtype t = t.dtype
 
 let shape t = t.shape
+
+let size t =
+  let (module D) = t.dtype in
+  Base.List.fold_left t.shape ~init:1 ~f:(fun acc s -> acc * s) * D.nbytes

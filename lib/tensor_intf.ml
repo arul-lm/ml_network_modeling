@@ -25,4 +25,6 @@ module type Tensor = sig
   val dtype : t -> (module Dtype)
 
   val shape : t -> int list
+
+  val size : t -> int
 end
