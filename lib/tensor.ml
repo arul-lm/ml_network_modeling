@@ -3,7 +3,10 @@ open Tensor_intf
     
 type t = { shape: int list; device: (module Device) device_data; dtype: (module Dtype)}    
 
-let make shape ~device ~dtype = {shape; device; dtype}
+let make shape ~device ~dtype =
+  (* All numbers are > 0 *)
+  (* Size of list must be > 0 *)
+  {shape; device; dtype}
 
 let device t = t.device
 
