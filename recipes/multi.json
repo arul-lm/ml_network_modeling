@@ -1,0 +1,312 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "A node-link diagram with force-directed layout, depicting character co-occurrence in the novel Les Misérables.",
+  "padding": 0,
+  "autosize": "none",
+  "data": [
+    {
+      "name": "node-data",
+      "url": "data/clos.json",
+      "format": {"type": "json", "property": "vertices"}
+    },
+    {
+      "name": "link-data",
+      "url": "data/clos.json",
+      "format": {"type": "json", "property": "links"}
+    },
+    {
+      "name": "data_0",
+      "url": "data/clos.json",
+      "format": {"type": "json", "property": "vertices"},
+      "transform": [
+        {"type": "filter", "expr": "slice(datum.group, 0, 6) == 'Device'"}
+      ]
+    }
+  ],
+  "legends": [
+    {
+      "title": "Mem usage",
+      "orient": "top-right",
+      "type": "symbol",
+      "fill": "node-color",
+      "clipHeight": 16
+    },
+    {
+      "title": "Link type",
+      "orient": "top-right",
+      "type": "symbol",
+      "fill": "link-color",
+      "clipHeight": 16
+    },
+    {"fill": "mem-color", "symbolType": "square", "title": "group"}
+  ],
+  "signals": [
+    {
+      "name": "x_step",
+      "update": "20 * bandspace(domain('xOffset').length, 0, 0) / (1-0.2)"
+    },
+    {
+      "name": "width",
+      "update": "bandspace(domain('x').length, 0.2, 0.2) * x_step"
+    }
+  ],
+  "scales": [
+    {
+      "name": "node-color",
+      "type": "linear",
+      "nice": true,
+      "domain": {"data": "node-data", "field": "mem_cap"},
+      "range": {"scheme": "redyellowgreen"},
+      "reverse": true
+    },
+    {
+      "name": "link-color",
+      "type": "ordinal",
+      "domain": {"data": "link-data", "field": "link_type"},
+      "range": {"scheme": "blueorange"}
+    },
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {"data": "data_0", "field": "group", "sort": true},
+      "range": {"step": {"signal": "x_step"}},
+      "paddingInner": 0.2,
+      "paddingOuter": 0.2
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "data_0", "field": "mem_cap"},
+      "range": [{"signal": "ceil(height/4)"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "xOffset",
+      "type": "band",
+      "domain": {"data": "data_0", "field": "name", "sort": true},
+      "range": {"step": 20}
+    },
+    {
+      "name": "mem-color",
+      "type": "ordinal",
+      "domain": {"data": "data_0", "field": "name", "sort": true},
+      "range": "category"
+    }
+  ],
+  "width": 1000,
+  "height": 1200,
+  "layout": {"columns": 1, "padding": {"column": 20}},
+  "marks": [
+    {
+      "type": "group",
+      "name": "graph",
+      "style": "cell",
+      "signals": [
+        {"name": "g_height", "value": 1200},
+        {"name": "g_width", "value": 700},
+        {"name": "cx", "update": "g_width / 2"},
+        {"name": "cy", "update": "g_height / 2"},
+        {"name": "nodeRadius", "value": 12},
+        {"name": "static", "value": true},
+        {
+          "description": "State variable for active node fix status.",
+          "name": "fix",
+          "value": false,
+          "on": [
+            {
+              "events": "symbol:mouseout[!event.buttons], window:mouseup",
+              "update": "false"
+            },
+            {"events": "symbol:mouseover", "update": "fix || true"},
+            {
+              "events": "[symbol:mousedown, window:mouseup] > window:mousemove!",
+              "update": "xy()",
+              "force": true
+            }
+          ]
+        },
+        {
+          "description": "Graph node most recently interacted with.",
+          "name": "node",
+          "value": null,
+          "on": [
+            {
+              "events": "symbol:mouseover",
+              "update": "fix === true ? item() : node"
+            }
+          ]
+        },
+        {
+          "description": "Flag to restart Force simulation upon data changes.",
+          "name": "restart",
+          "value": false,
+          "on": [{"events": {"signal": "fix"}, "update": "fix && fix.length"}]
+        }
+      ],
+      "marks": [
+        {
+          "name": "nodes",
+          "type": "symbol",
+          "zindex": 1,
+          "from": {"data": "node-data"},
+          "on": [
+            {
+              "trigger": "fix",
+              "modify": "node",
+              "values": "fix === true ? {fx: node.x, fy: node.y} : {fx: fix[0], fy: fix[1]}"
+            },
+            {
+              "trigger": "!fix",
+              "modify": "node",
+              "values": "{fx: null, fy: null}"
+            }
+          ],
+          "encode": {
+            "enter": {
+              "fill": {"scale": "node-color", "field": "mem_used"},
+              "stroke": {"value": "white"},
+              "x": {"field": "centroid[0]"},
+              "y": {"field": "centroid[1]"}
+            },
+            "update": {
+              "size": {"signal": "2 * nodeRadius * nodeRadius"},
+              "cursor": {"value": "pointer"},
+              "tooltip": {
+                "signal": "{\"mem_capacity(GB)\":datum.mem_cap, \"mem_used(GB)\":datum.mem_used, \"name\":datum.name}"
+              }
+            }
+          },
+          "transform": [
+            {
+              "type": "force",
+              "iterations": 1,
+              "restart": {"signal": "restart"},
+              "static": {"signal": "static"},
+              "signal": "force",
+              "forces": [
+                {
+                  "force": "center",
+                  "x": {"signal": "cx"},
+                  "y": {"signal": "cy"}
+                },
+                {"force": "x", "x": "datum.centroid[0]"},
+                {"force": "y", "y": "datum.centroid[1]"},
+                {"force": "link", "links": "link-data", "distance": 60}
+              ]
+            }
+          ]
+        },
+        {
+          "type": "path",
+          "from": {"data": "link-data"},
+          "encode": {
+            "update": {
+              "stroke": {"scale": "link-color", "field": "link_type"},
+              "strokeWidth": {"field": "stroke_width"},
+              "cursor": {"value": "cursor"},
+              "tooltip": [
+                {
+                  "signal": "{\"link:\":datum.link_type, \"bandwidth(Gbps):\":datum.bandwidth}"
+                }
+              ]
+            }
+          },
+          "transform": [
+            {
+              "type": "linkpath",
+              "require": {"signal": "force"},
+              "shape": "line",
+              "sourceX": "datum.source.x",
+              "sourceY": "datum.source.y",
+              "targetX": "datum.target.x",
+              "targetY": "datum.target.y"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "interactive": false,
+          "from": {"data": "node-data"},
+          "encode": {
+            "enter": {
+              "align": {"value": "center"},
+              "baseline": {"value": "middle"},
+              "fontSize": {"value": 8},
+              "fontWeight": {"value": "bold"},
+              "text": {"field": "name"}
+            },
+            "update": {
+              "dx": {"value": 120},
+              "dy": {"value": 150},
+              "x": {"field": "centroid[0]"},
+              "y": {"field": "centroid[1]"}
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "style": "cell",
+      "name": "mem_used",
+      "axes": [
+        {
+          "scale": "y",
+          "orient": "left",
+          "gridScale": "x",
+          "grid": true,
+          "tickCount": {"signal": "ceil(height/40)"},
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        },
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "Devices",
+          "labelAlign": "right",
+          "labelAngle": 270,
+          "labelBaseline": "middle",
+          "zindex": 0
+        },
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": false,
+          "title": "Memory",
+          "labelOverlap": true,
+          "tickCount": {"signal": "ceil(height/40)"},
+          "zindex": 0
+        }
+      ],
+      "marks": [
+        {
+          "name": "marks",
+          "type": "rect",
+          "style": ["bar"],
+          "from": {"data": "data_0"},
+          "encode": {
+            "update": {
+              "fill": {"scale": "mem-color", "field": "name"},
+              "ariaRoleDescription": {"value": "bar"},
+              "x": {
+                "scale": "x",
+                "field": "group",
+                "offset": {"scale": "xOffset", "field": "name"}
+              },
+              "width": {"signal": "max(0.25, bandwidth('xOffset'))"},
+              "y": {"scale": "y", "field": "mem_used"},
+              "y2": {"scale": "y", "value": 0}
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
