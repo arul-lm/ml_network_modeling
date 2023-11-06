@@ -20,6 +20,7 @@ type link_data =
   ; index : int
   ; link_type : string
   ; stroke_width : float
+  ; bandwidth : float
   }
 [@@deriving yojson]
 
@@ -59,6 +60,7 @@ let link_data_of_node (module N : Node) node_data =
            ; index = link_id
            ; link_type
            ; stroke_width = bw /. IA.bandwidth *. 2.
+           ; bandwidth = bw
            }
            :: !result
       in
@@ -66,7 +68,8 @@ let link_data_of_node (module N : Node) node_data =
     in
     Array.iter unwind_conn conns
   in
-  handle_conns (sanitize_show_str (show_link_type Intra)) IA.bandwidth intra_conns;
+  (* (sanitize_show_str (show_link_type Intra)) *)
+  handle_conns IA.name IA.bandwidth intra_conns;
   List.rev !result
 ;;
 
@@ -93,6 +96,7 @@ let link_data_of_l1 nodes (module L1 : Level1) =
            ; index = link_id
            ; link_type
            ; stroke_width = bw /. IA.bandwidth *. 2.
+           ; bandwidth = bw
            }
            :: !result
       in
@@ -100,7 +104,8 @@ let link_data_of_l1 nodes (module L1 : Level1) =
     in
     Array.iter unwind_conn conns
   in
-  handle_conns (sanitize_show_str (show_link_type Inter)) IR.bandwidth inter_conns;
+  (* let link_type = (sanitize_show_str (show_link_type Inter)) in *)
+  handle_conns IR.name IR.bandwidth inter_conns;
   List.rev !result
 ;;
 
@@ -128,6 +133,7 @@ let link_data_of_l2 nodes (module L2 : Level2) =
            ; index = link_id
            ; link_type
            ; stroke_width = bw /. IA.bandwidth *. 2.
+           ; bandwidth = bw
            }
            :: !result
       in
@@ -135,7 +141,8 @@ let link_data_of_l2 nodes (module L2 : Level2) =
     in
     Array.iter unwind_conn conns
   in
-  handle_conns (sanitize_show_str (show_link_type Inter)) IR.bandwidth inter_conns;
+  (* let link_type = (sanitize_show_str (show_link_type Inter)) in *)
+  handle_conns IR.name IR.bandwidth inter_conns;
   List.rev !result
 ;;
 
@@ -157,7 +164,7 @@ let make_vertices cx cy rows row_off col_off start group vertex_type name vs =
   let result = ref [] in
   let row_count = Array.length vs / rows in
   let make_vertex dev_id =
-    let name = Printf.sprintf "%s_%d" name (dev_id) in
+    let name = Printf.sprintf "%s_%d" name dev_id in
     let vid = start + List.length !result in
     let row_id = dev_id / row_count in
     let col_id = dev_id mod row_count in
