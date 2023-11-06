@@ -30,6 +30,8 @@ type vertex_data =
   ; index : int
   ; vertex_type : string
   ; centroid : float * float
+  ; mem_used : float
+  ; mem_cap : float
   }
 [@@deriving yojson]
 
@@ -163,7 +165,7 @@ let device_cx = device_row_span *. num_levels
 let make_vertices cx cy rows row_off col_off start group vertex_type name vs =
   let result = ref [] in
   let row_count = Array.length vs / rows in
-  let make_vertex dev_id =
+  let make_vertex (dev_id, mem_used, mem_cap) =
     let name = Printf.sprintf "%s_%d" name dev_id in
     let vid = start + List.length !result in
     let row_id = dev_id / row_count in
@@ -171,7 +173,8 @@ let make_vertices cx cy rows row_off col_off start group vertex_type name vs =
     let cx_off = Int.to_float row_id *. row_off in
     let cy_off = Int.to_float col_id *. col_off in
     let centroid = cx +. cx_off, cy +. cy_off in
-    result := { name; group; index = vid; vertex_type; centroid } :: !result
+    result
+    := { name; group; index = vid; vertex_type; centroid; mem_used; mem_cap } :: !result
   in
   Array.iter make_vertex vs;
   List.rev !result
@@ -194,7 +197,7 @@ let vertex_data_of_l2 nodes (module L2 : Level2) =
   let cy = if y_size = col_off then y_size /. 2. else min_cy in
   let rows = 1 in
   let row_off = 0. in
-  let switches = Array.map (fun Switch_intf.{ id } -> id) L2.switches in
+  let switches = Array.map (fun Switch_intf.{ id } -> id, 0., 0.) L2.switches in
   let vertex_type = show_vertex_type SpineSwitch |> sanitize_show_str in
   let group = S.name in
   make_vertices cx cy rows row_off col_off start group vertex_type S.name switches
@@ -215,7 +218,7 @@ let vertex_data_of_l1 nodes (module L1 : Level1) =
   let cy = min_cy in
   let rows = 1 in
   let row_off = 0. in
-  let switches = Array.map (fun Switch_intf.{ id } -> id) L1.switches in
+  let switches = Array.map (fun Switch_intf.{ id } -> id, 0., 0.) L1.switches in
   let vertex_type = show_vertex_type RailSwitch |> sanitize_show_str in
   let group = S.name in
   make_vertices cx cy rows row_off col_off start group vertex_type S.name switches
@@ -229,7 +232,11 @@ let vertex_data_of_node (module N : Node) node_data =
   let rows = device_rows in
   let row_off = device_row_off in
   let col_off = device_col_off in
-  let devices = Array.map (fun Device_intf.{ id } -> id) N.devices in
+  let devices =
+    Array.map
+      (fun Device_intf.{ id; mem_used; mem_cap } -> id, mem_used, mem_cap)
+      N.devices
+  in
   let (module D) = N.device in
   let vertex_type = show_vertex_type Device |> sanitize_show_str in
   let group = Printf.sprintf "%s_%d" vertex_type node_id in

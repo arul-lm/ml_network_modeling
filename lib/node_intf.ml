@@ -22,7 +22,7 @@ module DGX : Node = struct
   let dev_count = 8
   let intra_link = (module Link_intf.NvLink : Link_intf.IntraLink)
   let device = (module Device_intf.H100 : Device_intf.Device)
-  let devices = Device_intf.(Array.init dev_count (fun id -> { id }))
+  let devices = make_h100 dev_count
   let intra_connections = Conn.connections devices devices ~conn_type:`AllToAll
 end
 

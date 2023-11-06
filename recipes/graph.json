@@ -111,7 +111,10 @@
         },
         "update": {
           "size": {"signal": "2 * nodeRadius * nodeRadius"},
-          "cursor": {"value": "pointer"}
+          "cursor": {"value": "pointer"},
+          "tooltip": {
+            "signal": "{\"mem_capacity(GB)\":datum.mem_cap, \"mem_used(GB)\":datum.mem_used, \"name\":datum.name}"
+          }
         }
       },
       "transform": [
@@ -133,11 +136,16 @@
     {
       "type": "path",
       "from": {"data": "link-data"},
-      "interactive": false,
       "encode": {
         "update": {
           "stroke": {"scale": "link-color", "field": "link_type"},
-          "strokeWidth": {"field": "stroke_width"}
+          "strokeWidth": {"field": "stroke_width"},
+          "cursor": {"value": "cursor"},
+          "tooltip": [
+            {
+              "signal": "{\"link:\":datum.link_type, \"bandwidth(Gbps):\":datum.bandwidth}"
+            }
+          ]
         }
       },
       "transform": [
@@ -152,7 +160,7 @@
         }
       ]
     },
-        {
+    {
       "type": "text",
       "interactive": false,
       "from": {"data": "node-data"},
@@ -165,8 +173,8 @@
           "text": {"field": "name"}
         },
         "update": {
-          "dx":{"value":120},
-          "dy":{"value": 150},
+          "dx": {"value": 120},
+          "dy": {"value": 150},
           "x": {"field": "centroid[0]"},
           "y": {"field": "centroid[1]"}
         }
