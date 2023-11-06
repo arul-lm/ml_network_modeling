@@ -1,8 +1,8 @@
-{
+ {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "description": "A node-link diagram with force-directed layout, depicting character co-occurrence in the novel Les Misérables.",
   "width": 700,
-  "height": 500,
+  "height": 700,
   "padding": 0,
   "autosize": "none",
   "signals": [
@@ -49,12 +49,12 @@
   "data": [
     {
       "name": "node-data",
-      "url": "data/level1.json",
+      "url": "data/clos.json",
       "format": {"type": "json", "property": "vertices"}
     },
     {
       "name": "link-data",
-      "url": "data/level1.json",
+      "url": "data/clos.json",
       "format": {"type": "json", "property": "links"}
     }
   ],
@@ -62,7 +62,7 @@
     {
       "name": "color",
       "type": "ordinal",
-      "domain": {"data": "node-data", "field": "group"},
+      "domain": {"data": "node-data", "field": "vertex_type"},
       "range": {"scheme": "redyellowgreen"}
     }
   ],
@@ -82,7 +82,7 @@
       ],
       "encode": {
         "enter": {
-          "fill": {"scale": "color", "field": "group"},
+          "fill": {"scale": "color", "field": "vertex_type"},
           "stroke": {"value": "white"},
           "x": {"field": "centroid[0]"},
           "y": {"field": "centroid[1]"}
@@ -95,7 +95,7 @@
       "transform": [
         {
           "type": "force",
-          "iterations": 5,
+          "iterations": 1,
           "restart": {"signal": "restart"},
           "static": {"signal": "static"},
           "signal": "force",
