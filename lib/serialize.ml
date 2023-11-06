@@ -1,12 +1,12 @@
 open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 open Level1_intf
-    open Level2_intf
+open Level2_intf
 open Node_intf
 
 type link_type =
   | Intra
   | Inter
-[@@deriving yojson]
+[@@deriving show]
 
 type vertex_type =
   | SpineSwitch
@@ -19,7 +19,7 @@ type link_data =
   ; target : int
   ; distance : int
   ; index : int
-  ; link_type : link_type
+  ; link_type : string
   }
 [@@deriving yojson]
 
@@ -57,7 +57,7 @@ let link_data_of_node (module N : Node) node_data =
     in
     Array.iter unwind_conn conns
   in
-  handle_conns Intra IA.bandwidth intra_conns;
+  handle_conns (show_link_type Intra) IA.bandwidth intra_conns;
   List.rev !result
 ;;
 
@@ -83,7 +83,7 @@ let link_data_of_l1 nodes (module L1 : Level1) =
     in
     Array.iter unwind_conn conns
   in
-  handle_conns Inter IR.bandwidth inter_conns;
+  handle_conns (show_link_type Inter) IR.bandwidth inter_conns;
   List.rev !result
 ;;
 
@@ -95,7 +95,7 @@ let link_data_of_l2 nodes (module L2 : Level2) =
   let intra_count, _ = N.intra_connections in
   let l1_count, _ = L1.inter_connections nodes in
   let result = ref [] in
-  let link_off = intra_count * Array.length nodes + l1_count in
+  let link_off = (intra_count * Array.length nodes) + l1_count in
   let tgt_off = N.dev_count * Array.length nodes in
   let src_off = tgt_off + L1.switch_count in
   let handle_conns link_type bw conns =
@@ -110,16 +110,17 @@ let link_data_of_l2 nodes (module L2 : Level2) =
     in
     Array.iter unwind_conn conns
   in
-  handle_conns Inter IR.bandwidth inter_conns;
+  handle_conns (show_link_type Inter) IR.bandwidth inter_conns;
   List.rev !result
-    
+;;
+
 let node_size = 12.0
 let device_row_off = node_size *. 4.
 let device_col_off = node_size *. 2.
 let device_rows = 2
 let device_row_span = (node_size +. device_row_off) *. Int.to_float device_rows
 let device_off_count = 2
-  
+
 let device_col_span device_count =
   (node_size +. device_col_off) *. Int.to_float (device_count / device_rows)
 ;;
@@ -149,12 +150,14 @@ let vertex_data_of_l2 nodes (module L2 : Level2) =
   let (module L1) = L2.l1 in
   let (module N) = L1.node in
   let node_count = List.length nodes in
-  let start = node_count * N.dev_count + L1.switch_count in
+  let start = (node_count * N.dev_count) + L1.switch_count in
   let level_id = 2. in
-  let cx = device_cx -. ((device_cx /. num_levels) *. level_id) in
+  let cx = device_cx -. (device_cx /. num_levels *. level_id) in
   let min_cy = 0. in
-  let max_cy = Int.to_float node_count *. device_col_span (N.dev_count + device_off_count) in
-  let y_size = (max_cy -. min_cy) in
+  let max_cy =
+    Int.to_float node_count *. device_col_span (N.dev_count + device_off_count)
+  in
+  let y_size = max_cy -. min_cy in
   let col_off = y_size /. Int.to_float L2.switch_count in
   let cy = if y_size = col_off then y_size /. 2. else min_cy in
   let rows = 1 in
@@ -162,17 +165,20 @@ let vertex_data_of_l2 nodes (module L2 : Level2) =
   let switches = Array.map (fun Switch_intf.{ id } -> id) L2.switches in
   let vertex_type = show_vertex_type SpineSwitch in
   let group = S.name in
-  make_vertices cx cy rows row_off col_off start group vertex_type S.name switches  
-                     
+  make_vertices cx cy rows row_off col_off start group vertex_type S.name switches
+;;
+
 let vertex_data_of_l1 nodes (module L1 : Level1) =
   let (module S) = L1.switch in
   let (module N) = L1.node in
   let node_count = List.length nodes in
   let start = node_count * N.dev_count in
   let level_id = 1. in
-  let cx = (device_cx -. ((device_cx /. num_levels) *. level_id)) in
+  let cx = device_cx -. (device_cx /. num_levels *. level_id) in
   let min_cy = 0. in
-  let max_cy = Int.to_float node_count *. device_col_span (N.dev_count + device_off_count) in
+  let max_cy =
+    Int.to_float node_count *. device_col_span (N.dev_count + device_off_count)
+  in
   let col_off = (max_cy -. min_cy) /. Int.to_float L1.switch_count in
   let cy = min_cy in
   let rows = 1 in
