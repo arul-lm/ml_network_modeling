@@ -18,13 +18,14 @@ end
 module type Tensor = sig
   type t
 
-  val make : int list -> device:(module Device) device_data -> dtype:(module Dtype) -> t
+  val make
+    :  int list
+    -> device:(module Device) device_data
+    -> dtype:(module Dtype)
+    -> t option
 
   val device : t -> (module Device) device_data
-
   val dtype : t -> (module Dtype)
-
   val shape : t -> int list
-
-  val size : t -> int
+  val size : t -> float
 end
