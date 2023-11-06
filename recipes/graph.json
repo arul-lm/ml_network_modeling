@@ -10,10 +10,9 @@
     {"name": "cy", "update": "height / 2"},
     {
       "name": "nodeRadius",
-      "value": 12,
-      "bind": {"input": "range", "min": 1, "max": 50, "step": 1}
+      "value": 12
     },
-    {"name": "static", "value": true, "bind": {"input": "checkbox"}},
+    {"name": "static", "value": true},
     {
       "description": "State variable for active node fix status.",
       "name": "fix",
@@ -48,7 +47,7 @@
   ],
   "legends": [
     {
-      "title": "Node type",
+      "title": "Mem usage",
       "orient": "top-right",
       "type": "symbol",
       "fill": "color",
@@ -77,9 +76,11 @@
   "scales": [
     {
       "name": "color",
-      "type": "ordinal",
-      "domain": {"data": "node-data", "field": "vertex_type"},
-      "range": {"scheme": "redyellowgreen"}
+      "type": "linear",
+      "nice": true,
+      "domain": {"data": "node-data", "field": "mem_cap"},
+      "range": {"scheme": "redyellowgreen"},
+      "reverse":true
     },
     {
       "name": "link-color",
@@ -104,7 +105,7 @@
       ],
       "encode": {
         "enter": {
-          "fill": {"scale": "color", "field": "vertex_type"},
+          "fill": {"scale": "color", "field": "mem_used"},
           "stroke": {"value": "white"},
           "x": {"field": "centroid[0]"},
           "y": {"field": "centroid[1]"}

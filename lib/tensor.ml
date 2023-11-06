@@ -1,12 +1,20 @@
-open Device_intf
+open! Device_intf
 open Tensor_intf
+open Node_intf
 
+(* Tensors assigned to (node, device) *)
+(* Keep track of the id *)
+(* Collect list of tensors - ops *)
+(* Allocate *)
+(* Get updated stats - stats *)
 type t =
   { shape : int list
+  ; node : (module Node) node_data
   ; device : (module Device) device_data
   ; dtype : (module Dtype)
   }
 
+let node t = t.node
 let device t = t.device
 let dtype t = t.dtype
 let shape t = t.shape
@@ -16,15 +24,8 @@ let size t =
   Base.List.fold_left t.shape ~init:1 ~f:(fun acc s -> acc * s) * D.nbytes |> Int.to_float
 ;;
 
-let make shape ~device ~dtype =
+let make shape ~node ~device ~dtype =
   (* All numbers are > 0 *)
   (* Size of list must be > 0 *)
-  let t = { shape; device; dtype } in
-  let t_size = size t in
-  let new_size = device.mem_used +. t_size in
-  if new_size < device.mem_cap
-  then (
-    let device = { device with mem_used = new_size } in
-    Some { shape; device; dtype })
-  else None
+  Some { shape; node; device; dtype }
 ;;

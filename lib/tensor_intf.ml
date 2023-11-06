@@ -1,4 +1,5 @@
-open Device_intf
+open! Device_intf
+open Node_intf
 
 module type Dtype = sig
   val name : string
@@ -20,6 +21,7 @@ module type Tensor = sig
 
   val make
     :  int list
+    -> node:(module Node) node_data
     -> device:(module Device) device_data
     -> dtype:(module Dtype)
     -> t option
@@ -28,4 +30,5 @@ module type Tensor = sig
   val dtype : t -> (module Dtype)
   val shape : t -> int list
   val size : t -> float
+  val node : t -> (module Node) node_data
 end

@@ -7,9 +7,10 @@ let dummy (module N : Node) nodes =
     let { id = node_id; _ } = node_data in
     let handle_dev device_data =
       let Device_intf.{ id = device_id; _ } = device_data in
+      let shape = if device_id mod 4 = 0 then [ 256; 5120; 10240 ] else [256; 512*5; 1024*25] in
       let w =
         Tensor.make
-          [ 128; 512; 1024 ]
+          shape
           ~node:node_data
           ~device:device_data
           ~dtype:(module FP32)

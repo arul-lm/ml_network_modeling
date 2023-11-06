@@ -2,6 +2,7 @@ open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 open Level1_intf
 open Level2_intf
 open Node_intf
+open! Tensor_intf
 
 type link_type =
   | Intra
@@ -88,7 +89,7 @@ let link_data_of_l1 nodes (module L1 : Level1) =
     let unwind_conn dsts =
       let make_link dst =
         let source, target = Conn.conn_pair dst in
-        let Node_intf.{ id = node_id } = nodes.(target) in
+        let Node_intf.{ id = node_id; _ } = nodes.(target) in
         let target = (node_id * N.dev_count) + source in
         let source = dev_off + source in
         let link_id = link_off + Conn.link_id dst in
@@ -173,6 +174,9 @@ let make_vertices cx cy rows row_off col_off start group vertex_type name vs =
     let cx_off = Int.to_float row_id *. row_off in
     let cy_off = Int.to_float col_id *. col_off in
     let centroid = cx +. cx_off, cy +. cy_off in
+    let giga_float = Int.to_float Units.giga_b in
+    let mem_used = mem_used /. giga_float in
+    let mem_cap = mem_cap /. giga_float in
     result
     := { name; group; index = vid; vertex_type; centroid; mem_used; mem_cap } :: !result
   in
@@ -224,29 +228,34 @@ let vertex_data_of_l1 nodes (module L1 : Level1) =
   make_vertices cx cy rows row_off col_off start group vertex_type S.name switches
 ;;
 
-let vertex_data_of_node (module N : Node) node_data =
-  let Node_intf.{ id = node_id; _ } = node_data in
+let vertex_data_of_node (module N : Node) (node_stats : Stats.t array) =
+  let Node_intf.{ id = node_id; _ } = Stats.node node_stats.(0) in
+  let (module D) = N.device in
+  let devices =
+    Array.map
+      (fun s ->
+        let Device_intf.{ id } = Stats.device s in
+        id, Stats.mem_used s, D.memory)
+      node_stats
+  in
   let start = N.dev_count * node_id in
   let cx = device_cx in
   let cy = device_col_span (N.dev_count + device_off_count) *. Int.to_float node_id in
   let rows = device_rows in
   let row_off = device_row_off in
   let col_off = device_col_off in
-  let devices =
-    Array.map
-      (fun Device_intf.{ id; mem_used; mem_cap } -> id, mem_used, mem_cap)
-      N.devices
-  in
-  let (module D) = N.device in
   let vertex_type = show_vertex_type Device |> sanitize_show_str in
   let group = Printf.sprintf "%s_%d" vertex_type node_id in
   make_vertices cx cy rows row_off col_off start group vertex_type D.name devices
 ;;
 
 let serialize_clos_dgx nodes ~file_name =
+  let stats_array = Workloads.dummy DGX_L1.node nodes in
   let nodes_l = Array.to_list nodes in
   let vertices =
-    Base.List.map nodes_l ~f:(vertex_data_of_node DGX_L1.node) |> List.concat
+    Base.Array.fold stats_array ~init:[] ~f:(fun acc s ->
+      vertex_data_of_node DGX_L1.node s :: acc)
+    |> List.concat
   in
   let links = Base.List.map nodes_l ~f:(link_data_of_node DGX_L1.node) |> List.concat in
   let vertices = vertices @ vertex_data_of_l1 nodes_l (module DGX_L1) in
