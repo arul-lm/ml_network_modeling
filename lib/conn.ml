@@ -25,10 +25,10 @@ let all_to_all xs ys =
       (* if dst_id = src_id *)
       (* then None *)
       (* else ( *)
-        let conn = make (src_id, dst_id) (src, tgt) !link_id in
-        link_id := !link_id + 1;
-        Some conn
-(* ) *)
+      let conn = make (src_id, dst_id) (src, tgt) !link_id in
+      link_id := !link_id + 1;
+      Some conn
+      (* ) *)
     in
     Base.Array.filter_mapi ys ~f:form_conn
   in

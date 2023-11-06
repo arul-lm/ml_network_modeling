@@ -16,12 +16,12 @@ module type Level1 = sig
   val name : string
   val switch_count : int
   val switch : (module RailSwitch)
-  val switches : (module RailSwitch) rail_data array
+  val switches : (module RailSwitch) switch_data array
   val inter_link : (module InterLink)
 
   val inter_connections
     :  (module Node) node_data array
-    -> int * ((module RailSwitch) rail_data, (module Node) node_data) Conn.t array array
+    -> int * ((module RailSwitch) switch_data, (module Node) node_data) Conn.t array array
 end
 
 module MakeInter (I : InterConnect) : InterLink = struct
