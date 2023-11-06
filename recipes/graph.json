@@ -1,8 +1,8 @@
- {
+{
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "description": "A node-link diagram with force-directed layout, depicting character co-occurrence in the novel Les Misérables.",
   "width": 700,
-  "height": 700,
+  "height": 1200,
   "padding": 0,
   "autosize": "none",
   "signals": [
@@ -46,6 +46,22 @@
       "on": [{"events": {"signal": "fix"}, "update": "fix && fix.length"}]
     }
   ],
+  "legends": [
+    {
+      "title": "Node type",
+      "orient": "top-right",
+      "type": "symbol",
+      "fill": "color",
+      "clipHeight": 16
+    },
+    {
+      "title": "Link type",
+      "orient": "top-right",
+      "type": "symbol",
+      "fill": "link-color",
+      "clipHeight": 16
+    }
+  ],
   "data": [
     {
       "name": "node-data",
@@ -64,6 +80,12 @@
       "type": "ordinal",
       "domain": {"data": "node-data", "field": "vertex_type"},
       "range": {"scheme": "redyellowgreen"}
+    },
+    {
+      "name": "link-color",
+      "type": "ordinal",
+      "domain": {"data": "link-data", "field": "link_type"},
+      "range": {"scheme": "blueorange"}
     }
   ],
   "marks": [
@@ -113,7 +135,10 @@
       "from": {"data": "link-data"},
       "interactive": false,
       "encode": {
-        "update": {"stroke": {"value": "#ccc"}, "strokeWidth": {"value": 0.5}}
+        "update": {
+          "stroke": {"scale": "link-color", "field": "link_type"},
+          "strokeWidth": {"field": "stroke_width"}
+        }
       },
       "transform": [
         {
@@ -126,6 +151,26 @@
           "targetY": "datum.target.y"
         }
       ]
+    },
+        {
+      "type": "text",
+      "interactive": false,
+      "from": {"data": "node-data"},
+      "encode": {
+        "enter": {
+          "align": {"value": "center"},
+          "baseline": {"value": "middle"},
+          "fontSize": {"value": 8},
+          "fontWeight": {"value": "bold"},
+          "text": {"field": "name"}
+        },
+        "update": {
+          "dx":{"value":120},
+          "dy":{"value": 150},
+          "x": {"field": "centroid[0]"},
+          "y": {"field": "centroid[1]"}
+        }
+      }
     }
   ]
 }

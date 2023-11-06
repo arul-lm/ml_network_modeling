@@ -2,7 +2,7 @@ include Device_intf
 
 module type InterConnect = sig
   val name : string
-  val bandwidth : int
+  val bandwidth : float
 end
 
 module type Link = sig
@@ -37,12 +37,12 @@ end
 
 module NvLinkIC : InterConnect = struct
   let name = "nvlink"
-  let bandwidth = 900
+  let bandwidth = 900.0
 end
 
 module InfinibandIC : InterConnect = struct
   let name = "IB"
-  let bandwidth = 400 (* connect x NIC *)
+  let bandwidth = 400.0 (* connect x NIC *)
 end
 
 module NvLink = MakeIntra (NvLinkIC)
