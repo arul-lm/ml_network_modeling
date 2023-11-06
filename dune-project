@@ -23,7 +23,8 @@
   ocaml
   dune
   (yojson (>= 2.1.1))
-  (ppx_yojson_conv (>= v0.16.0)))
+  (ppx_yojson_conv (>= v0.16.0))
+  (ppx_deriving (>= 5.2.1)))
  (tags
   (topics "to describe" your project)))
 

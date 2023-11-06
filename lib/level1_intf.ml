@@ -16,6 +16,7 @@ module type Level1 = sig
   val name : string
   val switch_count : int
   val switch : (module RailSwitch)
+  val switches : (module RailSwitch) rail_data array
   val inter_link : (module InterLink)
 
   val inter_connections
