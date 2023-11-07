@@ -20,10 +20,10 @@ module type Tensor = sig
   type t
 
   val make
-    :  int list
-    -> node:(module Node) node_data
+    :  node:(module Node) node_data
     -> device:(module Device) device_data
     -> dtype:(module Dtype)
+    -> int list
     -> t option
 
   val device : t -> (module Device) device_data

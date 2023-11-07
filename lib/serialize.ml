@@ -250,7 +250,7 @@ let vertex_data_of_node (module N : Node) (node_stats : Stats.t array) =
 ;;
 
 let serialize_clos_dgx nodes ~file_name =
-  let stats_array = Workloads.dummy DGX_L1.node nodes in
+  let stats_array = Workloads.load_transformer DGX_L1.node nodes in
   let nodes_l = Array.to_list nodes in
   let vertices =
     Base.Array.fold stats_array ~init:[] ~f:(fun acc s ->

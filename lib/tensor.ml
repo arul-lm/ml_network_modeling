@@ -24,7 +24,7 @@ let size t =
   Base.List.fold_left t.shape ~init:1 ~f:(fun acc s -> acc * s) * D.nbytes |> Int.to_float
 ;;
 
-let make shape ~node ~device ~dtype =
+let make ~node ~device ~dtype shape =
   (* All numbers are > 0 *)
   (* Size of list must be > 0 *)
   Some { shape; node; device; dtype }
