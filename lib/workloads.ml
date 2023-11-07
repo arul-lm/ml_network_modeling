@@ -39,18 +39,33 @@ let load_transformer t (module N : Node) nodes =
         Tensor.make ~node:node_data ~device:device_data ~dtype:(module BF16) s
         |> Option.get
       in
+      (* layer_norm *)
+      let weight, bias = [ h ], [ h ] in
+      let lnorm = LayerNorm (make_t weight, make_t bias) in
       (* QKV projections *)
-      let shape = [ h; h / mpar ] in
-      let w_q = Linear (make_t shape) in
+      let weight, bias = [ h; h / mpar ], [ h / mpar ] in
+      let w_q = Linear (make_t weight, make_t bias) in
       (*  Out projections *)
-      let shape = [ h / mpar; h ] in
-      let w_o = Linear (make_t shape) in
+      let weight, bias = [ h / mpar; h ], [ h ] in
+      let w_o = Linear (make_t weight, make_t bias) in
       (* MLP *)
-      let shape = [ h; 4 * h / mpar ] in
-      let mlp_0 = Linear (make_t shape) in
-      let shape = [ 4 * h / mpar; h ] in
-      let mlp_1 = Linear (make_t shape) in
-      let layer_ops = [| w_q; w_q; w_q; w_o; mlp_0; mlp_1 |] in
+      let weight, bias = [ h; 4 * h / mpar ], [ 4 * h / mpar ] in
+      let mlp_0 = Linear (make_t weight, make_t bias) in
+      let weight, bias = [ 4 * h / mpar; h ], [ h ] in
+      let mlp_1 = Linear (make_t weight, make_t bias) in
+      let layer_ops =
+        [| lnorm
+         ; w_q
+         ; w_q
+         ; w_q
+         ; Transpose (node_data, device_data)
+         ; Matmul (node_data, device_data) (* QK^T *)
+         ; w_o
+         ; lnorm
+         ; mlp_0
+         ; mlp_1
+        |]
+      in
       let l_ops_count = Array.length layer_ops in
       let tformer_ops =
         Base.Array.init (l_ops_count * num_layers) ~f:(fun idx ->
