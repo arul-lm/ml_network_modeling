@@ -9,9 +9,9 @@ let tensor_stats t =
   Stats.add_node_stats ~node ~device ~mem_used
 ;;
 
-let to_stats = function
+let load_op = function
   | CreateOp t -> tensor_stats t
   | Linear (w, b) | LayerNorm (w, b) -> Stats.(tensor_stats w + tensor_stats b)
-  | Matmul (node, device) | Transpose (node, device) ->
-    Stats.add_node_stats ~node ~device ~mem_used:0.
+  | QK (node, device) -> Stats.add_node_stats ~node ~device ~mem_used:0.
+  | Softmax (node, device) -> Stats.add_node_stats ~node ~device ~mem_used:0.
 ;;

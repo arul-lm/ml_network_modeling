@@ -1,29 +1,6 @@
 open Node_intf
 open Tensor_intf
 
-let dummy (module N : Node) nodes =
-  let stats_array = Stats.stats_nodes nodes (module N) in
-  let handle_node node_data =
-    let { id = node_id; _ } = node_data in
-    let handle_dev device_data =
-      let Device_intf.{ id = device_id; _ } = device_data in
-      let shape =
-        if device_id mod 4 = 0 then [ 256; 5120; 10240 ] else [ 256; 512 * 5; 1024 * 25 ]
-      in
-      let w =
-        Tensor.make shape ~node:node_data ~device:device_data ~dtype:(module FP32)
-        |> Option.get
-      in
-      let stats = Op_intf.CreateOp w |> Op.to_stats in
-      let stats_node = stats_array.(node_id).(device_id) in
-      stats_array.(node_id).(device_id) <- Stats.(stats_node + stats)
-    in
-    Array.iter handle_dev N.devices
-  in
-  Array.iter handle_node nodes;
-  stats_array
-;;
-
 let load_transformer t (module N : Node) nodes =
   let open Op_intf in
   let stats_array = Stats.stats_nodes nodes (module N) in
@@ -58,8 +35,8 @@ let load_transformer t (module N : Node) nodes =
          ; w_q
          ; w_q
          ; w_q
-         ; Transpose (node_data, device_data)
-         ; Matmul (node_data, device_data) (* QK^T *)
+         ; QK (node_data, device_data) (* QK^T *)
+         ; Softmax (node_data, device_data)
          ; w_o
          ; lnorm
          ; mlp_0
@@ -71,7 +48,7 @@ let load_transformer t (module N : Node) nodes =
         Base.Array.init (l_ops_count * num_layers) ~f:(fun idx ->
           layer_ops.(idx mod l_ops_count))
       in
-      let stats = Base.Array.map tformer_ops ~f:Op.to_stats in
+      let stats = Base.Array.map tformer_ops ~f:Op.load_op in
       let init = stats_array.(node_id).(device_id) in
       stats_array.(node_id).(device_id) <- Base.Array.fold stats ~init ~f:Stats.( + )
     in
