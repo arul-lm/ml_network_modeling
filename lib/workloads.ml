@@ -24,13 +24,14 @@ let dummy (module N : Node) nodes =
   stats_array
 ;;
 
-let load_transformer (module N : Node) nodes =
+let load_transformer t (module N : Node) nodes =
   let open Op_intf in
   let stats_array = Stats.stats_nodes nodes (module N) in
-  let h = 1024 in
-  let num_layers = 96 in
   let mpar = N.dev_count in
-  (* let dpar = Array.length nodes in *)
+  let h = Transformer.embed_dim t in
+  let num_layers = Transformer.num_layers t in
+  assert (Transformer.num_heads t mod mpar = 0);
+  (* QK^T *)
   let handle_node node_data =
     let { id = node_id; _ } = node_data in
     let handle_dev device_data =
