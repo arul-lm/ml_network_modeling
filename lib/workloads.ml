@@ -31,13 +31,12 @@ let load_transformer t (module N : Node) nodes =
   let h = Transformer.embed_dim t in
   let num_layers = Transformer.num_layers t in
   assert (Transformer.num_heads t mod mpar = 0);
-  (* QK^T *)
   let handle_node node_data =
     let { id = node_id; _ } = node_data in
     let handle_dev device_data =
       let Device_intf.{ id = device_id; _ } = device_data in
       let make_t s =
-        Tensor.make ~node:node_data ~device:device_data ~dtype:(module FP16) s
+        Tensor.make ~node:node_data ~device:device_data ~dtype:(module BF16) s
         |> Option.get
       in
       (* QKV projections *)

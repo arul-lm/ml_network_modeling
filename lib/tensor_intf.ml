@@ -11,8 +11,18 @@ module FP32 : Dtype = struct
   let nbytes = 4
 end
 
+module TF32 : Dtype = struct
+  let name = "tf32"
+  let nbytes = 2
+end
+
 module FP16 : Dtype = struct
   let name = "fp16"
+  let nbytes = 2
+end
+
+module BF16 : Dtype = struct
+  let name = "bf16"
   let nbytes = 2
 end
 

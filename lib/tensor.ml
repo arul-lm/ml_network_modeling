@@ -2,11 +2,6 @@ open! Device_intf
 open Tensor_intf
 open Node_intf
 
-(* Tensors assigned to (node, device) *)
-(* Keep track of the id *)
-(* Collect list of tensors - ops *)
-(* Allocate *)
-(* Get updated stats - stats *)
 type t =
   { shape : int list
   ; node : (module Node) node_data
