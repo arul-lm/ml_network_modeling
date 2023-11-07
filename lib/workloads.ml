@@ -28,7 +28,6 @@ let load_transformer (module N : Node) nodes =
   let open Op_intf in
   let stats_array = Stats.stats_nodes nodes (module N) in
   let h = 1024 in
-  let s = 512 in
   let num_layers = 96 in
   let mpar = N.dev_count in
   (* let dpar = Array.length nodes in *)
@@ -44,7 +43,7 @@ let load_transformer (module N : Node) nodes =
       let shape = [ h; h / mpar ] in
       let w_q = Linear (make_t shape) in
       (*  Out projections *)
-      let shape = [ s / mpar; h ] in
+      let shape = [ h / mpar; h ] in
       let w_o = Linear (make_t shape) in
       (* MLP *)
       let shape = [ h; 4 * h / mpar ] in
