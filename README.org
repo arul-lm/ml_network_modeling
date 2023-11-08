@@ -1,6 +1,7 @@
 * Next
 - [X] Build ops inside transformer.ml
 - [X] Add workload specs
+- [X] Add optimizer state
 - [ ] Add forward pass for ops - ops_intf.ml
 - [ ] Model memory first
 - [ ] Save all activations first
