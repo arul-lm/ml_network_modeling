@@ -9,9 +9,15 @@ let tensor_stats t =
   Stats.add_node_stats ~node ~device ~mem_used
 ;;
 
-let load_op = function
+let load_weight = function
   | CreateOp t -> tensor_stats t
   | Linear (w, b) | LayerNorm (w, b) -> Stats.(tensor_stats w + tensor_stats b)
-  | QK (node, device) -> Stats.add_node_stats ~node ~device ~mem_used:0.
-  | Softmax (node, device) -> Stats.add_node_stats ~node ~device ~mem_used:0.
 ;;
+
+let is_weight_op = function
+  | WeightOp o -> Some o
+  | _ -> None
+;;
+
+let ( @ ) o = WeightOp o
+let ( & ) o = NoParamOp o

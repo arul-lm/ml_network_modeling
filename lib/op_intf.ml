@@ -1,15 +1,24 @@
 open Node_intf
 
-(* Need type hierarchy. Ops with weights and Ops only used in forward/backward passes *)
-type op_type =
+type weight_op =
   | CreateOp of Tensor.t
   | Linear of Tensor.t * Tensor.t
   | LayerNorm of Tensor.t * Tensor.t
+
+type no_param_op =
   | QK of (module Node) node_data * (module Device) device_data
   | Softmax of (module Node) node_data * (module Device) device_data
 
-module type Op = sig
-  type t = op_type
+(* Need type hierarchy. Ops with weights and Ops only used in forward/backward passes *)
+type op_type =
+  | WeightOp of weight_op
+  | NoParamOp of no_param_op
 
-  val load_op : t -> Stats.t
+module type Op = sig
+  type t
+
+  val is_weight_op : t -> weight_op option
+  val load_weight : weight_op -> Stats.t
+  val ( @ ) : weight_op -> t
+  val ( & ) : no_param_op -> t
 end

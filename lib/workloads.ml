@@ -18,25 +18,25 @@ let load_transformer t (module N : Node) nodes =
       in
       (* layer_norm *)
       let weight, bias = [ h ], [ h ] in
-      let lnorm = LayerNorm (make_t weight, make_t bias) in
+      let lnorm = LayerNorm (make_t weight, make_t bias) |> Op.( @ ) in
       (* QKV projections *)
       let weight, bias = [ h; h / mpar ], [ h / mpar ] in
-      let w_q = Linear (make_t weight, make_t bias) in
+      let w_q = Linear (make_t weight, make_t bias) |> Op.( @ ) in
       (*  Out projections *)
       let weight, bias = [ h / mpar; h ], [ h ] in
-      let w_o = Linear (make_t weight, make_t bias) in
+      let w_o = Linear (make_t weight, make_t bias) |> Op.( @ ) in
       (* MLP *)
       let weight, bias = [ h; 4 * h / mpar ], [ 4 * h / mpar ] in
-      let mlp_0 = Linear (make_t weight, make_t bias) in
+      let mlp_0 = Linear (make_t weight, make_t bias) |> Op.( @ ) in
       let weight, bias = [ 4 * h / mpar; h ], [ h ] in
-      let mlp_1 = Linear (make_t weight, make_t bias) in
+      let mlp_1 = Linear (make_t weight, make_t bias) |> Op.( @ ) in
       let layer_ops =
         [| lnorm
          ; w_q
          ; w_q
          ; w_q
-         ; QK (node_data, device_data) (* QK^T *)
-         ; Softmax (node_data, device_data)
+         ; QK (node_data, device_data) |> Op.( & ) (* QK^T *)
+         ; Softmax (node_data, device_data) |> Op.( & )
          ; w_o
          ; lnorm
          ; mlp_0
@@ -48,7 +48,8 @@ let load_transformer t (module N : Node) nodes =
         Base.Array.init (l_ops_count * num_layers) ~f:(fun idx ->
           layer_ops.(idx mod l_ops_count))
       in
-      let stats = Base.Array.map tformer_ops ~f:Op.load_op in
+      let w_ops = Base.Array.filter_map tformer_ops ~f:Op.is_weight_op in
+      let stats = Base.Array.map w_ops ~f:Op.load_weight in
       let init = stats_array.(node_id).(device_id) in
       stats_array.(node_id).(device_id) <- Base.Array.fold stats ~init ~f:Stats.( + )
     in
