@@ -41,4 +41,5 @@ module type Tensor = sig
   val shape : t -> int list
   val size : t -> float
   val node : t -> (module Node) node_data
+  val numel : t -> int
 end

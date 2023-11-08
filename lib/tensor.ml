@@ -13,10 +13,11 @@ let node t = t.node
 let device t = t.device
 let dtype t = t.dtype
 let shape t = t.shape
+let numel t = Base.List.fold_left t.shape ~init:1 ~f:(fun acc s -> acc * s)
 
 let size t =
   let (module D) = t.dtype in
-  Base.List.fold_left t.shape ~init:1 ~f:(fun acc s -> acc * s) * D.nbytes |> Int.to_float
+  numel t * D.nbytes |> Int.to_float
 ;;
 
 let make ~node ~device ~dtype shape =

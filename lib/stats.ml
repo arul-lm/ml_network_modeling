@@ -30,3 +30,4 @@ let ( + ) t1 t2 =
 
 let device t = t.device
 let node t = t.node
+let empty node device = add_node_stats ~node ~device ~mem_used:0.
