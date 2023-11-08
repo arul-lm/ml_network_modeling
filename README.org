@@ -1,5 +1,6 @@
 * Next
-- [ ] Build ops inside transformer.ml
+- [X] Build ops inside transformer.ml
 - [ ] Add workload specs
+- [ ] Add forward pass for ops
 - 
 - 
