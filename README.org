@@ -1,0 +1,5 @@
+* Next
+- [ ] Build ops inside transformer.ml
+- [ ] Add workload specs
+- 
+- 
