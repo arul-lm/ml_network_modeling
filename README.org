@@ -1,6 +1,13 @@
 * Next
 - [X] Build ops inside transformer.ml
-- [ ] Add workload specs
-- [ ] Add forward pass for ops
+- [X] Add workload specs
+- [ ] Add forward pass for ops - ops_intf.ml
+- [ ] Model memory first
+- [ ] Save all activations first
+- [ ] Add dropout
+- [ ] Diff types of stats
+  - [ ] Weight stats - keeps track of mem per op + optimizer states
+  - [ ] fwd pass stats - keeps track of mem per op per iteration
+  - [ ] bkwd pass stats
 - 
 - 

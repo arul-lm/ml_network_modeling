@@ -3,6 +3,7 @@ type t =
   { embed_dim : int
   ; num_heads : int
   ; num_layers : int
+  ; w_dtype : (module Dtype)
   }
 
 let embed_dim t = t.embed_dim
@@ -10,8 +11,8 @@ let num_heads t = t.num_heads
 let num_layers t = t.num_layers
 let head_dim t = t.embed_dim / t.num_heads
 
-let make ~embed_dim ~num_heads ~num_layers =
-  let t = { embed_dim; num_heads; num_layers } in
+let make ~embed_dim ~num_heads ~num_layers ~w_dtype =
+  let t = { embed_dim; num_heads; num_layers; w_dtype} in
   let rem = embed_dim mod num_heads in
   if rem <> 0 then None else Some t
 ;;
@@ -20,7 +21,7 @@ let build t mpar node_data device_data =
     let h = embed_dim t in
   assert (num_heads t mod mpar = 0);
       let make_t s =
-        Tensor.make ~node:node_data ~device:device_data ~dtype:(module BF16) s
+        Tensor.make ~node:node_data ~device:device_data ~dtype:(t.w_dtype) s
         |> Option.get
       in
       (* layer_norm *)

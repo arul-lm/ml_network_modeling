@@ -1,7 +1,7 @@
 open Node_intf
 
 type weight_op =
-  | CreateOp of Tensor.t
+  | Create of Tensor.t
   | Linear of Tensor.t * Tensor.t
   | LayerNorm of Tensor.t * Tensor.t
 

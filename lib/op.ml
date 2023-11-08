@@ -10,7 +10,7 @@ let tensor_stats t =
 ;;
 
 let load_weight = function
-  | CreateOp t -> tensor_stats t
+  | Create t -> tensor_stats t
   | Linear (w, b) | LayerNorm (w, b) -> Stats.(tensor_stats w + tensor_stats b)
 ;;
 
@@ -21,3 +21,6 @@ let is_weight_op = function
 
 let ( @ ) o = WeightOp o
 let ( & ) o = NoParamOp o
+
+(* let forward = function *)
+(*   |  *)

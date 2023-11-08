@@ -251,7 +251,7 @@ let vertex_data_of_node (module N : Node) (node_stats : Stats.t array) =
 
 let serialize_clos_dgx nodes ~file_name =
   let opt175b =
-    Transformer.make ~embed_dim:12288 ~num_heads:96 ~num_layers:96 |> Option.get
+    Transformer.make ~embed_dim:12288 ~num_heads:96 ~num_layers:96 ~w_dtype:(module BF16)|> Option.get
   in
   let stats_array = Orchestrator.load_transformer opt175b DGX_L1.node nodes in
   let nodes_l = Array.to_list nodes in
