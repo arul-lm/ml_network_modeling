@@ -60,3 +60,13 @@ let opt30b =
     ~is_train:true
   |> Option.get
 ;;
+
+let bert_large =
+  Transformer.make
+    ~embed_dim:1024
+    ~num_heads:64
+    ~num_layers:24
+    ~w_dtype:(module BF16)
+    ~optimizer:(module Adam)
+    ~is_train:true
+  |> Option.get  

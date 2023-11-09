@@ -39,7 +39,7 @@ let load_transformer t (module N : Node) nodes =
         a, Stats.(s1 + s2)
       in
       let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd tf_ops in
-      (* Stdlib.Printf.printf "%d\n" (Stats.flops fwd_stats); *)
+      Stdlib.Printf.printf "%f\n" (Stats.latency fwd_stats);
       stats_array.(node_id).(device_id) <- Stats.(weight_stats + opt_stats + fwd_stats)
     in
     Array.iter ~f:handle_dev N.devices

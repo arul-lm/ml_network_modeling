@@ -71,7 +71,6 @@ let link_data_of_node (module N : Node) node_data =
     in
     Array.iter unwind_conn conns
   in
-  (* (sanitize_show_str (show_link_type Intra)) *)
   handle_conns IA.name IA.bandwidth intra_conns;
   List.rev !result
 ;;
@@ -249,7 +248,7 @@ let vertex_data_of_node (module N : Node) (node_stats : Stats.t array) =
 ;;
 
 let serialize_clos_dgx nodes ~file_name =
-  let model = Transformers.opt13b in
+  let model = Transformers.bert_large in
   let stats_array = Orchestrator.load_transformer model DGX_L1.node nodes in
   let nodes_l = Array.to_list nodes in
   let vertices =
