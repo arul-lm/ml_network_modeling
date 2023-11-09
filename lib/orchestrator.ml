@@ -10,6 +10,7 @@ let load_transformer t (module N : Node) nodes =
   let b = Transformer_wl.batch_size wl in
   let s = Transformer_wl.seq_len wl in
   let e = Transformer.embed_dim t in
+  let forward_pass = Op.forward N.device in
   let handle_node node =
     let { id = node_id; _ } = node in
     let handle_dev device =
@@ -34,7 +35,7 @@ let load_transformer t (module N : Node) nodes =
       in
       let empty_stats = Stats.empty node device in
       let run_fwd (a, s1) op =
-        let a, s2 = Op.forward op a in
+        let a, s2 = forward_pass op a in
         a, Stats.(s1 + s2)
       in
       let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd tf_ops in

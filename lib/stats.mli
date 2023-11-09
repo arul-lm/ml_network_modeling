@@ -7,6 +7,7 @@ val add_node_stats
   -> device:(module Device) device_data
   -> mem_used:float
   -> flops:int
+  -> latency:float
   -> t
 
 val mem_used : t -> float
@@ -17,4 +18,6 @@ val node : t -> (module Node) node_data
 val device : t -> (module Device) device_data
 val empty : (module Node) node_data -> (module Device) device_data -> t
 val add_flops : t -> int -> t
+val add_mem : t -> float -> t
 val flops : t -> int
+val latency : t -> float

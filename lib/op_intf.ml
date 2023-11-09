@@ -23,7 +23,7 @@ module type Op = sig
   val is_weight_op : t -> weight_op option
   val load_weight : weight_op -> Stats.t
   val load_optimizer_states : (module Optimizer) -> weight_op -> Stats.t
-  val forward : t -> Tensor.t -> Tensor.t * Stats.t
+  val forward : (module Device) -> t -> Tensor.t -> Tensor.t * Stats.t
   val ( @ ) : weight_op -> t
   val ( & ) : no_param_op -> t
   val to_string : t -> string
