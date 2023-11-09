@@ -23,7 +23,7 @@ let make ~embed_dim ~num_heads ~num_layers ~w_dtype ~is_train ~optimizer =
   if rem <> 0 then None else Some t
 ;;
 
-let build t mpar node_data device_data =
+let build t mpar (batch, seq) node_data device_data =
   let h = embed_dim t in
   assert (num_heads t mod mpar = 0);
   let make_t s =
@@ -34,7 +34,8 @@ let build t mpar node_data device_data =
   let lnorm = LayerNorm (make_t weight, make_t bias) |> Op.( @ ) in
   (* QKV projections *)
   let weight, bias = [ h; h / mpar ], [ h / mpar ] in
-  let w_q = Linear (make_t weight, make_t bias) |> Op.( @ ) in
+  let w_q = Op_intf.Linear (make_t weight, make_t bias) in
+  let qkv = QKV w_q |> Op.( @ ) in
   (*  Out projections *)
   let weight, bias = [ h / mpar; h ], [ h ] in
   let w_o = Linear (make_t weight, make_t bias) |> Op.( @ ) in
@@ -45,11 +46,10 @@ let build t mpar node_data device_data =
   let mlp_1 = Linear (make_t weight, make_t bias) |> Op.( @ ) in
   let layer_ops =
     [| lnorm
-     ; w_q
-     ; w_q
-     ; w_q
+     ; qkv
      ; QK (node_data, device_data) |> Op.( & ) (* QK^T *)
      ; Softmax (node_data, device_data) |> Op.( & )
+     ; AV (make_t [ batch; seq; h / mpar ]) |> Op.( & )
      ; w_o
      ; lnorm
      ; mlp_0

@@ -25,6 +25,7 @@ module type Transformer = sig
   val build
     :  t
     -> int
+    -> int * int
     -> (module Node) node_data
     -> (module Device) device_data
     -> Op.t array

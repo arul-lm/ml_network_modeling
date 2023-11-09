@@ -5,8 +5,10 @@ type weight_op =
   | Create of Tensor.t
   | Linear of Tensor.t * Tensor.t
   | LayerNorm of Tensor.t * Tensor.t
+  | QKV of weight_op
 
 type no_param_op =
+  | AV of Tensor.t
   | QK of (module Node) node_data * (module Device) device_data
   | Softmax of (module Node) node_data * (module Device) device_data
 
@@ -24,4 +26,5 @@ module type Op = sig
   val forward : t -> Tensor.t -> Tensor.t * Stats.t
   val ( @ ) : weight_op -> t
   val ( & ) : no_param_op -> t
+  val to_string : t -> string
 end

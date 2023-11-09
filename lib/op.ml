@@ -19,23 +19,21 @@ let optimizer_stats (module O : Optimizer) t =
   Stats.add_node_stats ~node ~device ~mem_used
 ;;
 
-let load_weight = function
+let rec load_weight = function
   | Create t -> tensor_stats t
   | Linear (w, b) | LayerNorm (w, b) -> Stats.(tensor_stats w + tensor_stats b)
+  | QKV wop -> Stats.(load_weight wop * 3.)
 ;;
 
-let load_optimizer_states (module O : Optimizer) op =
+let rec load_optimizer_states (module O : Optimizer) op =
   let calc_opt_stats = optimizer_stats (module O) in
   match op with
   | Create t -> calc_opt_stats t
   | Linear (w, b) | LayerNorm (w, b) -> Stats.(calc_opt_stats w + calc_opt_stats b)
+  | QKV wop -> Stats.(load_optimizer_states (module O) wop * 3.)
 ;;
 
-let matmul node device dtype (m, _k, n) =
-  Tensor.make ~node ~device ~dtype [ m; n ] |> Option.get
-;;
-
-let matmul_prep w x =
+let matmul x w =
   let node = Tensor.node x in
   let device = Tensor.device x in
   let dtype = Tensor.dtype x in
@@ -43,19 +41,37 @@ let matmul_prep w x =
   assert (Tensor.device w = Tensor.device x);
   assert (Tensor.dtype w = Tensor.dtype x);
   let kx = Base.List.last_exn (Tensor.shape x) in
-  let kw = Base.List.last_exn (Tensor.shape w) in
-  let m = Tensor.numel x / kx in
-  let n = Tensor.numel w / kw in
+  let kw = Base.List.hd_exn (Tensor.shape w) in
+  let xs = Base.List.drop_last_exn (Tensor.shape x) in
+  let ys = Base.List.tl_exn (Tensor.shape w) in
+  let out_shape = xs @ ys in
+  Printf.printf "Matmul:%s|%s\n" (Tensor.to_string x) (Tensor.to_string w);
   assert (kx = kw);
-  let out = matmul node device dtype (m, kx, n) in
+  let out = Tensor.make ~node ~device ~dtype out_shape |> Option.get in
   out, tensor_stats out
 ;;
 
-let w_forward op x =
+let rec w_forward op x =
   match op with
   | Create t -> t, Stats.empty (Tensor.node t) (Tensor.device t)
-  | Linear (w, _b) -> matmul_prep w x
+  | Linear (w, _b) -> matmul x w
   | LayerNorm (_w, _b) -> x, tensor_stats x
+  | QKV wop ->
+    let o, s = w_forward wop x in
+    o, Stats.(s * 3.)
+;;
+
+let bmm node device dtype ?(transpose = true) x y =
+  (* bxsxe, bxsxe -> bxsxe, bxexs *)
+  let shape = Tensor.shape y in
+  let ndims = List.length shape in
+  let xs = Base.List.drop shape (ndims - 2) in
+  let ys = if transpose then List.rev xs else xs in
+  let k_t = Tensor.make ~node ~device ~dtype ys |> Option.get in
+  (* QK^T *)
+  let out, s = matmul x k_t in
+  Printf.printf "QKT:%s\n" (Tensor.to_string out);
+  out, s
 ;;
 
 let no_param_forward op x =
@@ -63,16 +79,10 @@ let no_param_forward op x =
   let device = Tensor.device x in
   let dtype = Tensor.dtype x in
   match op with
-  | QK (_, _) ->
-    (* Tranpose K *)
-    let shape = Tensor.shape x in
-    assert (List.length shape = 3);
-    let b = List.hd shape in
-    let mk = List.tl shape in
-    let km = List.rev mk in
-    let k_t = Tensor.make ~node ~device ~dtype (b :: km) |> Option.get in
-    let q_t = x in
-    matmul_prep q_t k_t
+  | QK (_, _) -> bmm node device dtype x x
+  | AV y ->
+    Printf.printf "AV\n";
+    bmm node device dtype ~transpose:false x y
   | Softmax (_, _) -> x, tensor_stats x
 ;;
 
@@ -89,3 +99,21 @@ let is_weight_op = function
 
 let ( @ ) o = WeightOp o
 let ( & ) o = NoParamOp o
+
+let w_to_string = function
+  | Create _ -> "create"
+  | Linear (_, _) -> "linear"
+  | LayerNorm (_, _) -> "lnorm"
+  | QKV _ -> "qkv"
+;;
+
+let no_p_to_string = function
+  | AV _ -> "AV:"
+  | QK (_, _) -> "QK:"
+  | Softmax (_, _) -> "Softmax:"
+;;
+
+let to_string = function
+  | WeightOp o -> w_to_string o
+  | NoParamOp o -> no_p_to_string o
+;;

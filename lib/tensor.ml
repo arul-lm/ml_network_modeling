@@ -25,3 +25,5 @@ let make ~node ~device ~dtype shape =
   (* Size of list must be > 0 *)
   Some { shape; node; device; dtype }
 ;;
+
+let to_string t = Base.String.concat ~sep:"," (Base.List.map ~f:Int.to_string (shape t))

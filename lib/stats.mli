@@ -11,6 +11,7 @@ val add_node_stats
 val mem_used : t -> float
 val stats_nodes : (module Node) node_data array -> (module Node) -> t array array
 val ( + ) : t -> t -> t
+val ( * ) : t -> float -> t
 val node : t -> (module Node) node_data
 val device : t -> (module Device) device_data
 val empty : (module Node) node_data -> (module Device) device_data -> t

@@ -28,6 +28,7 @@ let ( + ) t1 t2 =
   else { t1 with mem_used = t1.mem_used +. t2.mem_used }
 ;;
 
+let ( * ) t n = { t with mem_used = t.mem_used *. n }
 let device t = t.device
 let node t = t.node
 let empty node device = add_node_stats ~node ~device ~mem_used:0.
