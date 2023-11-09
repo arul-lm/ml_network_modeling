@@ -69,4 +69,5 @@ let bert_large =
     ~w_dtype:(module BF16)
     ~optimizer:(module Adam)
     ~is_train:true
-  |> Option.get  
+  |> Option.get
+;;

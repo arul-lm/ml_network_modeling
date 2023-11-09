@@ -120,8 +120,13 @@ let is_weight_op = function
   | _ -> None
 ;;
 
-let ( @ ) o = WeightOp o
-let ( & ) o = NoParamOp o
+let is_compute_op = function
+  | ComputeOp o -> Some o
+  | _ -> None
+;;
+
+let ( @ ) o = ComputeOp (WeightOp o)
+let ( & ) o = ComputeOp (NoParamOp o)
 
 let w_to_string = function
   | Create _ -> "create"
@@ -136,7 +141,16 @@ let no_p_to_string = function
   | Softmax (_, _) -> "Softmax"
 ;;
 
-let to_string = function
+let comp_to_string = function
   | WeightOp o -> w_to_string o
   | NoParamOp o -> no_p_to_string o
+;;
+
+let comm_to_string = function
+  | AllReduce _t -> "AllReduce"
+;;
+
+let to_string = function
+  | ComputeOp o -> comp_to_string o
+  | CommOp o -> comm_to_string o
 ;;

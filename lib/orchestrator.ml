@@ -16,7 +16,8 @@ let load_transformer t (module N : Node) nodes =
     let handle_dev device =
       let Device_intf.{ id = device_id; _ } = device in
       let tf_ops = Transformer.build t mpar (b, s) node device in
-      let w_ops = Array.filter_map tf_ops ~f:Op.is_weight_op in
+      let comp_ops = Array.filter_map tf_ops ~f:Op.is_compute_op in
+      let w_ops = Array.filter_map comp_ops ~f:Op.is_weight_op in
       (* Load weight *)
       let stats = Array.map w_ops ~f:Op.load_weight in
       let init = stats_array.(node_id).(device_id) in
@@ -38,7 +39,7 @@ let load_transformer t (module N : Node) nodes =
         let a, s2 = forward_pass op a in
         a, Stats.(s1 + s2)
       in
-      let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd tf_ops in
+      let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd comp_ops in
       Stdlib.Printf.printf "%f\n" (Stats.latency fwd_stats);
       stats_array.(node_id).(device_id) <- Stats.(weight_stats + opt_stats + fwd_stats)
     in
