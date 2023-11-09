@@ -1,5 +1,7 @@
 open Op_intf
 open Optimizer_state
+open Device_intf
+open Tensor_intf
 
 type t = op_type
 
@@ -10,8 +12,6 @@ let tensor_stats t =
   let s = Stats.empty node device in
   Stats.add_mem s mem_used
 ;;
-
-(* Stats.add_node_stats ~node ~device ~mem_used ~flops:0 *)
 
 let optimizer_stats (module O : Optimizer) t =
   let node = Tensor.node t in
@@ -37,12 +37,11 @@ let rec load_optimizer_states (module O : Optimizer) op =
   | QKV wop -> Stats.(load_optimizer_states (module O) wop * 3.)
 ;;
 
-let matmul (module D : Device_intf.Device) x w =
+let matmul x w =
   (* x can have multiple dimensions. w can have only two dimensions with overlapping dim as the first dim *)
   let node = Tensor.node x in
   let device = Tensor.device x in
   let dtype = Tensor.dtype x in
-  let (module DT) = dtype in
   assert (Tensor.node w = Tensor.node x);
   assert (Tensor.device w = Tensor.device x);
   assert (Tensor.dtype w = Tensor.dtype x);
@@ -57,31 +56,47 @@ let matmul (module D : Device_intf.Device) x w =
   let out = Tensor.make ~node ~device ~dtype out_shape |> Option.value_exn in
   let s = tensor_stats out in
   let flops = List.fold (kx :: out_shape) ~init:1 ~f:Int.( * ) in
-  let c_lat = Int.to_float flops /. (D.tf32_tflops *. Int.to_float DT.nbytes) in
-  Stdlib.Printf.printf "%d|%f\n" flops c_lat;
   out, Stats.add_flops s flops
 ;;
 
-let rec w_forward d op x =
+let matmul_lat (module D : Device) (module DT : Dtype) flops m_reads =
+  let c_lat =
+    Int.to_float flops /. (D.tf32_tflops *. Int.to_float DT.nbytes *. D.mvp_util)
+  in
+  let m_reads = m_reads *. Int.to_float DT.nbytes in
+  let m_tput = D.mem_bw *. D.mvp_util in
+  let m_lat = m_reads /. m_tput in
+  Float.max c_lat m_lat
+;;
+
+let matmul_wrapper (module D : Device) x y y' =
+  let out, s = matmul x y' in
+  let m_reads = Tensor.size x +. Tensor.size y in
+  let lat = matmul_lat (module D) (Tensor.dtype x) (Stats.flops s) m_reads in
+  let s = Stats.add_lat s lat in
+  out, s
+;;
+
+let rec w_forward (module D : Device) op x =
   match op with
   | Create t -> t, Stats.empty (Tensor.node t) (Tensor.device t)
-  | Linear (w, _b) -> matmul d x w
+  | Linear (w, _b) -> matmul_wrapper (module D) x w w
   | LayerNorm (_w, _b) -> x, tensor_stats x
   | QKV wop ->
-    let o, s = w_forward d wop x in
+    let o, s = w_forward (module D) wop x in
     o, Stats.(s * 3.)
 ;;
 
-let bmm d node device dtype ?(transpose = true) x y =
+let bmm (module D : Device) node device dtype ?(transpose = true) x y =
   (* bxsxe, bxsxe -> bxsxe, bxexs *)
   let shape = Tensor.shape y in
   let ndims = List.length shape in
+  (* bxsxe -> exs *)
   let xs = Base.List.drop shape (ndims - 2) in
   let ys = if transpose then List.rev xs else xs in
   let k_t = Tensor.make ~node ~device ~dtype ys |> Option.get in
   (* QK^T *)
-  let out, s = matmul d x k_t in
-  out, s
+  matmul_wrapper (module D) x y k_t
 ;;
 
 let no_param_forward d op x =

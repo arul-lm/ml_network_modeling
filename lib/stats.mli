@@ -19,5 +19,6 @@ val device : t -> (module Device) device_data
 val empty : (module Node) node_data -> (module Device) device_data -> t
 val add_flops : t -> int -> t
 val add_mem : t -> float -> t
+val add_lat : t -> float -> t
 val flops : t -> int
 val latency : t -> float

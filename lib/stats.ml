@@ -42,5 +42,6 @@ let device t = t.device
 let node t = t.node
 let add_flops t flops = { t with flops }
 let add_mem t mem_used = { t with mem_used }
+let add_lat t lat = { t with latency = lat }
 let flops t = t.flops
 let latency t = t.latency

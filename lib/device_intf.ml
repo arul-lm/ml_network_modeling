@@ -1,13 +1,26 @@
 module type Device = sig
   val name : string
   val memory : float
+  val mem_name : string
   val tf32_tflops : float
+  val mem_bw : float
+  val mem_util : float
+  val mvp_util : float
 end
 
 module H100 : Device = struct
+  (* https://resources.nvidia.com/en-us-tensor-core *)
   let name = "h100sxm5"
-  let memory = 80.0 *. Int.to_float Units.giga_b
+  let mem_name = "hbm2e"
+  let mem_per_stack = 16. *. Int.to_float Units.giga_b
+  let num_stacks = 5
+  let mem_bw = 3352. *. Int.to_float Units.giga_b
+
+  (* Page 18 *)
+  let memory = mem_per_stack *. Int.to_float num_stacks
   let tf32_tflops = 494.7 *. Int.to_float Units.giga_b
+  let mem_util = 0.75
+  let mvp_util = 0.5
 end
 
 (* Instance specific info *)
