@@ -17,3 +17,4 @@ val node : t -> (module Node) node_data
 val device : t -> (module Device) device_data
 val empty : (module Node) node_data -> (module Device) device_data -> t
 val add_flops : t -> int -> t
+val flops : t -> int

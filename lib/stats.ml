@@ -32,3 +32,4 @@ let ( * ) t n = { t with mem_used = t.mem_used *. n; flops = t.flops * 3 }
 let device t = t.device
 let node t = t.node
 let add_flops t flops = { t with flops }
+let flops t = t.flops
