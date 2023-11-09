@@ -32,14 +32,13 @@ let load_transformer t (module N : Node) nodes =
         Tensor.make ~node ~device ~dtype:(module BF16) [ b; s; e ]
         |> Option.value_exn ~here:[%here]
       in
-      Stdlib.Printf.printf "TT:%s\n" (Tensor.to_string act);
       let empty_stats = Stats.empty node device in
       let run_fwd (a, s1) op =
         let a, s2 = Op.forward op a in
         a, Stats.(s1 + s2)
       in
-      let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd tf_ops in
-      stats_array.(node_id).(device_id) <- Stats.(weight_stats + opt_stats + fwd_stats)
+      let _, _fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd tf_ops in
+      stats_array.(node_id).(device_id) <- Stats.(weight_stats + opt_stats)
     in
     Array.iter ~f:handle_dev N.devices
   in
