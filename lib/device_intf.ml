@@ -18,7 +18,7 @@ module H100 : Device = struct
 
   (* Page 18 *)
   let memory = mem_per_stack *. Int.to_float num_stacks
-  let tf32_tflops = 494.7 *. Int.to_float Units.giga_b
+  let tf32_tflops = 494.7 *. Int.to_float Units.tera_b
   let mem_util = 0.75
   let mvp_util = 0.5
 end
