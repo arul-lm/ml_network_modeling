@@ -8,6 +8,7 @@ type t =
   ; w_dtype : (module Dtype)
   ; is_train : bool
   ; optimizer : (module Optimizer)
+  ; vocab_size : int
   }
 
 let embed_dim t = t.embed_dim
@@ -16,14 +17,17 @@ let num_layers t = t.num_layers
 let head_dim t = t.embed_dim / t.num_heads
 let is_train t = t.is_train
 let optimizer t = t.optimizer
+let vocab_size t = t.vocab_size
 
-let make ~embed_dim ~num_heads ~num_layers ~w_dtype ~is_train ~optimizer =
-  let t = { embed_dim; num_heads; num_layers; w_dtype; is_train; optimizer } in
+let make ~embed_dim ~num_heads ~num_layers ~w_dtype ~is_train ~optimizer ~vocab_size =
+  let t =
+    { embed_dim; num_heads; num_layers; w_dtype; is_train; optimizer; vocab_size }
+  in
   let rem = embed_dim mod num_heads in
   if rem <> 0 then None else Some t
 ;;
 
-let build t mpar (batch, seq) (node, _node_count) (device, dev_count) =
+let build t mpar (batch, seq) (node, node_count) (device, dev_count) =
   let h = embed_dim t in
   assert (num_heads t mod mpar = 0);
   assert (mpar mod dev_count = 0);
@@ -65,17 +69,16 @@ let build t mpar (batch, seq) (node, _node_count) (device, dev_count) =
       ~f:(fun idx -> layer_ops.(idx mod l_ops_count))
   in
   (* TODO: Replace last dim should be vocab *)
-  (* let total_devices = node_count * dev_count in *)
-  (* let dpar = total_devices / mpar in *)
-  (* let final_loss_shard = make_t [ batch; seq; h / dpar ] in *)
-  (* let final_loss = make_t [ batch; seq; h ] in *)
-  (* if is_train t *)
-  (* then *)
-  (*   Array.append *)
-  (*     total_ops *)
-  (*     [| AllReduce (mpar, dev_count, final_loss_shard) |> Op.( % ) *)
-  (*      ; AllReduce (total_devices, mpar, final_loss) |> Op.( % ) *)
-  (*     |] *)
-  (* else layer_ops *)
-  total_ops
+  let total_devices = node_count * dev_count in
+  let dpar = total_devices / mpar in
+  let final_loss_shard = make_t [ batch; seq; h / dpar ] in
+  let final_loss = make_t [ batch; seq; h ] in
+  if is_train t
+  then
+    Array.append
+      total_ops
+      [| AllReduce (mpar, dev_count, final_loss_shard) |> Op.( % )
+       ; AllReduce (total_devices, mpar, final_loss) |> Op.( % )
+      |]
+  else layer_ops
 ;;

@@ -10,6 +10,7 @@ let opt175b =
     ~w_dtype:(module BF16)
     ~is_train:true
     ~optimizer:(module Adam)
+    ~vocab_size:50272
   |> Option.get
 ;;
 
@@ -22,6 +23,7 @@ let opt1_3b =
     ~w_dtype:(module BF16)
     ~optimizer:(module Adam)
     ~is_train:true
+    ~vocab_size:50272
   |> Option.get
 ;;
 
@@ -34,6 +36,7 @@ let opt6_7b =
     ~w_dtype:(module BF16)
     ~optimizer:(module Adam)
     ~is_train:true
+    ~vocab_size:50272
   |> Option.get
 ;;
 
@@ -46,6 +49,7 @@ let opt13b =
     ~w_dtype:(module BF16)
     ~optimizer:(module Adam)
     ~is_train:true
+    ~vocab_size:50272
   |> Option.get
 ;;
 
@@ -58,6 +62,7 @@ let opt30b =
     ~w_dtype:(module BF16)
     ~optimizer:(module Adam)
     ~is_train:true
+    ~vocab_size:50272
   |> Option.get
 ;;
 
@@ -70,8 +75,10 @@ let opt66b =
     ~w_dtype:(module BF16)
     ~optimizer:(module Adam)
     ~is_train:true
+    ~vocab_size:50272
   |> Option.get
-       
+;;
+
 let bert_large =
   Transformer.make
     ~embed_dim:1024
@@ -80,5 +87,6 @@ let bert_large =
     ~w_dtype:(module BF16)
     ~optimizer:(module Adam)
     ~is_train:true
+    ~vocab_size:28996
   |> Option.get
 ;;

@@ -18,7 +18,12 @@ let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
     let handle_dev device =
       let Device_intf.{ id = device_id; _ } = device in
       let tf_ops =
-        Transformer.build t mpar (b / dpar, s) (node, Array.length nodes) (device, N.dev_count)
+        Transformer.build
+          t
+          mpar
+          (b / dpar, s)
+          (node, Array.length nodes)
+          (device, N.dev_count)
       in
       let comp_ops = Array.filter_map tf_ops ~f:Op.is_compute_op in
       let w_ops = Array.filter_map comp_ops ~f:Op.is_weight_op in

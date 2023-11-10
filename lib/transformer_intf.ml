@@ -12,6 +12,7 @@ module type Transformer = sig
   val head_dim : t -> int
   val is_train : t -> bool
   val optimizer : t -> (module Optimizer)
+  val vocab_size : t -> int
 
   val make
     :  embed_dim:int
@@ -20,6 +21,7 @@ module type Transformer = sig
     -> w_dtype:(module Dtype)
     -> is_train:bool
     -> optimizer:(module Optimizer)
+    -> vocab_size:int
     -> t option
 
   val build

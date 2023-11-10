@@ -42,6 +42,13 @@ type graph =
   }
 [@@deriving yojson]
 
+(* {mem_used; latency; flops; comm_time} *)
+type usage_stats =
+  { mem_used : float
+  ; latency : float
+  ; flops : int
+  }
+
 let sanitize_show_str str = String.split_on_char '.' str |> List.rev |> List.hd
 
 let link_data_of_node (module N : Node) node_data =
