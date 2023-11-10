@@ -8,6 +8,7 @@ val add_node_stats
   -> mem_used:float
   -> flops:int
   -> latency:float
+  -> comm_time:float
   -> t
 
 val mem_used : t -> float
@@ -20,5 +21,7 @@ val empty : (module Node) node_data -> (module Device) device_data -> t
 val add_flops : t -> int -> t
 val add_mem : t -> float -> t
 val add_lat : t -> float -> t
+val add_comm : t -> float -> t
 val flops : t -> int
 val latency : t -> float
+val comm_time : t -> float

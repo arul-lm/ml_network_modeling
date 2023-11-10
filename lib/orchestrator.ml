@@ -1,12 +1,11 @@
 open Node_intf
 open Tensor_intf
 
-let load_transformer t (module N : Node) nodes =
+let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
   let open Base in
   let stats_array = Stats.stats_nodes nodes (module N) in
   let mpar = N.dev_count in
   let optimizer = Transformer.optimizer t in
-  let wl = Transformer_wl.make ~batch_size:1 ~seq_len:512 in
   let b = Transformer_wl.batch_size wl in
   let s = Transformer_wl.seq_len wl in
   let e = Transformer.embed_dim t in
@@ -15,9 +14,12 @@ let load_transformer t (module N : Node) nodes =
     let { id = node_id; _ } = node in
     let handle_dev device =
       let Device_intf.{ id = device_id; _ } = device in
-      let tf_ops = Transformer.build t mpar (b, s) node device in
+      let tf_ops =
+        Transformer.build t mpar (b, s) (node, Array.length nodes) (device, N.dev_count)
+      in
       let comp_ops = Array.filter_map tf_ops ~f:Op.is_compute_op in
       let w_ops = Array.filter_map comp_ops ~f:Op.is_weight_op in
+      let comm_ops = Array.filter_map tf_ops ~f:Op.is_comm_op in
       (* Load weight *)
       let stats = Array.map w_ops ~f:Op.load_weight in
       let init = stats_array.(node_id).(device_id) in
@@ -40,7 +42,11 @@ let load_transformer t (module N : Node) nodes =
         a, Stats.(s1 + s2)
       in
       let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd comp_ops in
-      (* (\* Stdlib.Printf.printf "%f\n" (Stats.latency fwd_stats); *\) *)        
+      (* Comm ops *)
+      let run_comm s op = Stats.add_comm s (comm_f op) in
+      let comm_stats = Array.fold ~init:empty_stats ~f:run_comm comm_ops in
+      Stdlib.Printf.printf "%f\n" (Stats.latency fwd_stats);
+      Stdlib.Printf.printf "%f\n" (Stats.comm_time comm_stats);
       stats_array.(node_id).(device_id) <- Stats.(weight_stats + opt_stats + fwd_stats)
     in
     Array.iter ~f:handle_dev N.devices

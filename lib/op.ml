@@ -125,8 +125,14 @@ let is_compute_op = function
   | _ -> None
 ;;
 
+let is_comm_op = function
+  | CommOp o -> Some o
+  | _ -> None
+;;
+
 let ( @ ) o = ComputeOp (WeightOp o)
 let ( & ) o = ComputeOp (NoParamOp o)
+let ( % ) o = CommOp o
 
 let w_to_string = function
   | Create _ -> "create"
@@ -147,7 +153,7 @@ let comp_to_string = function
 ;;
 
 let comm_to_string = function
-  | AllReduce _t -> "AllReduce"
+  | AllReduce _ -> "AllReduce"
 ;;
 
 let to_string = function

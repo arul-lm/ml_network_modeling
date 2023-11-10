@@ -1,4 +1,5 @@
 open Level1_intf
+open Op_intf
 
 module type Level2 = sig
   val l1 : (module Level1)
@@ -13,10 +14,7 @@ module type Level2 = sig
           array
 
   val inter_link : (module InterLink)
-      (* Switch latency *)
-  (* NIC latency *)
-    (* package mesh latency *)
-  val hop_latency : float
+  val handle_comm : comm_op -> float
 end
 
 module Clos : Level2 = struct
@@ -28,6 +26,41 @@ module Clos : Level2 = struct
   let inter_connections = Conn.connections switches DGX_L1.switches ~conn_type:`AllToAll
   let inter_link = (module Infiniband : InterLink)
 
-  let hop_latency = Int.to_float (100 * 2 + 100 * 2 + 20) *. Units.nano
-    
+  let handle_comm = function
+    | Op_intf.AllReduce (mpar, nd, t) ->
+      assert (mpar mod nd = 0);
+      let size = Tensor.size t in
+      let (module L1) = l1 in
+      let (module N) = L1.node in
+      let (module IN) = N.intra_link in
+      let reduce_scatter_1d shard dim (module IN : InterConnect) =
+        let num_steps = Int.to_float (dim - 1) in
+        (* bxsx(e/d) *)
+        let size_per_step = shard /. Int.to_float dim in
+        let send_vol = size_per_step in
+        let recv_vol = size_per_step in
+        let link_bw = IN.link_bandwidth 1 in
+        let time_per_step =
+          (send_vol +. recv_vol) /. (link_bw *. Int.to_float IN.num_links)
+        in
+        let comm_time = time_per_step *. num_steps in
+        let comm_time = comm_time +. (IN.hop_penalty *. num_steps) in
+        let comm_time = comm_time /. IN.efficiency in
+        comm_time
+      in
+      let all_reduce_1d shard dim =
+        reduce_scatter_1d shard dim (module Link_intf.NvLinkIC) *. 2.
+      in
+      let all_reduce_2d shard dim1 dim2 =
+        let d_shard = shard /. Int.to_float dim1 in
+        let intra_comm = all_reduce_1d d_shard dim2 in
+        let inter_comm =
+          reduce_scatter_1d d_shard dim1 (module Link_intf.InfinibandIC) *. 2.
+        in
+        intra_comm +. inter_comm
+      in
+      if mpar > nd
+      then all_reduce_2d size (mpar / nd) nd (* mpar is an integer multiple of nd *)
+      else all_reduce_1d size mpar
+  ;;
 end

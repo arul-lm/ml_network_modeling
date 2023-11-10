@@ -23,12 +23,12 @@ let make ~embed_dim ~num_heads ~num_layers ~w_dtype ~is_train ~optimizer =
   if rem <> 0 then None else Some t
 ;;
 
-let build t mpar (batch, seq) node_data device_data =
+let build t mpar (batch, seq) (node, _) (device, dev_count) =
   let h = embed_dim t in
   assert (num_heads t mod mpar = 0);
-  let make_t s =
-    Tensor.make ~node:node_data ~device:device_data ~dtype:t.w_dtype s |> Option.get
-  in
+  assert (mpar mod dev_count = 0);
+  let make_t s = Tensor.make ~node ~device ~dtype:t.w_dtype s |> Option.get in
+  let act = make_t [ batch; seq; h ] in
   (* layer_norm *)
   let weight, bias = [ h ], [ h ] in
   let lnorm = LayerNorm (make_t weight, make_t bias) |> Op.( @ ) in
@@ -47,13 +47,15 @@ let build t mpar (batch, seq) node_data device_data =
   let layer_ops =
     [| lnorm
      ; qkv
-     ; QK (node_data, device_data) |> Op.( & ) (* QK^T *)
-     ; Softmax (node_data, device_data) |> Op.( & )
+     ; QK (node, device) |> Op.( & ) (* QK^T *)
+     ; Softmax (node, device) |> Op.( & )
      ; AV (make_t [ batch; seq; h / mpar ]) |> Op.( & )
      ; w_o
+     ; AllReduce (mpar, dev_count, act) |> Op.( % )
      ; lnorm
      ; mlp_0
      ; mlp_1
+     ; AllReduce (mpar, dev_count, act) |> Op.( % )
     |]
   in
   let l_ops_count = Array.length layer_ops in

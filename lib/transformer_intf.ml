@@ -26,7 +26,7 @@ module type Transformer = sig
     :  t
     -> int
     -> int * int
-    -> (module Node) node_data
-    -> (module Device) device_data
+    -> (module Node) node_data * int
+    -> (module Device) device_data * int
     -> Op.t array
 end

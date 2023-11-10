@@ -7,14 +7,18 @@ type t =
   ; mem_used : float
   ; flops : int
   ; latency : float
+  ; comm_time : float
   }
 
-let add_node_stats ~node ~device ~mem_used ~flops ~latency =
-  { node; device; mem_used; flops; latency }
+let add_node_stats ~node ~device ~mem_used ~flops ~latency ~comm_time =
+  { node; device; mem_used; flops; latency; comm_time }
 ;;
 
 let mem_used t = t.mem_used
-let empty node device = add_node_stats ~node ~device ~mem_used:0. ~flops:0 ~latency:0.
+
+let empty node device =
+  add_node_stats ~node ~device ~mem_used:0. ~flops:0 ~latency:0. ~comm_time:0.
+;;
 
 let stats_nodes nodes (module N : Node) =
   let handle_node node_data =
@@ -45,3 +49,5 @@ let add_mem t mem_used = { t with mem_used }
 let add_lat t lat = { t with latency = lat }
 let flops t = t.flops
 let latency t = t.latency
+let add_comm t comm_time = { t with comm_time }
+let comm_time t = t.comm_time

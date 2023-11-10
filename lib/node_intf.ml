@@ -19,7 +19,7 @@ type 'a node_data = { id : int }
 
 module DGX : Node = struct
   let name = "dgx"
-  let dev_count = 8
+  let dev_count = 4
   let intra_link = (module Link_intf.NvLink : Link_intf.IntraLink)
   let device = (module Device_intf.H100 : Device_intf.Device)
   let devices = make_h100 dev_count

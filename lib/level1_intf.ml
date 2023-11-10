@@ -31,6 +31,10 @@ module MakeInter (I : InterConnect) : InterLink = struct
 
   let name = I.name
   let bandwidth = I.bandwidth
+  let num_links = I.num_links
+  let link_bandwidth = I.link_bandwidth
+  let efficiency = I.efficiency
+  let hop_penalty = I.hop_penalty
   let make a b = a, b
 end
 
