@@ -28,6 +28,6 @@ module Clos : Level2 = struct
   let inter_connections = Conn.connections switches DGX_L1.switches ~conn_type:`AllToAll
   let inter_link = (module Infiniband : InterLink)
 
-  let hop_latency = (100 * 2 + 100 * 2 + 20) 
+  let hop_latency = Int.to_float (100 * 2 + 100 * 2 + 20) *. Units.nano
     
 end

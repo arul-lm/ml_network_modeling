@@ -29,10 +29,22 @@ let load_transformer t (module N : Node) nodes =
         else [| Stats.empty node device |]
       in
       let opt_stats = Array.fold opt_stats ~init ~f:Stats.( + ) in
-      stats_array.(node_id).(device_id) <- Stats.(weight_stats + opt_stats)
+      (* Forward pass *)
+      let act =
+        Tensor.make ~node ~device ~dtype:(module BF16) [ b; s; e ]
+        |> Option.value_exn ~here:[%here]
+      in
+      let empty_stats = Stats.empty node device in
+      let run_fwd (a, s1) op =
+        let a, s2 = forward_pass op a in
+        a, Stats.(s1 + s2)
+      in
+      let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd comp_ops in
+      (* (\* Stdlib.Printf.printf "%f\n" (Stats.latency fwd_stats); *\) *)        
+      stats_array.(node_id).(device_id) <- Stats.(weight_stats + opt_stats + fwd_stats)
     in
     Array.iter ~f:handle_dev N.devices
   in
   Array.iter ~f:handle_node nodes;
-  tf_ops, stats_array
+  stats_array
 ;;

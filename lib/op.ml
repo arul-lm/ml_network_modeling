@@ -154,10 +154,3 @@ let to_string = function
   | ComputeOp o -> comp_to_string o
   | CommOp o -> comm_to_string o
 ;;
-
-let hierarchical_all_reduce t n_p n_d =
-  let size = Tensor.size t in
-  let local_shard = size /. Int.to_float (n_p * n_d) in
-  
-  (* reduce-scatter *)
-  let 

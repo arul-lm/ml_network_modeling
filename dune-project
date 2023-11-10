@@ -24,7 +24,8 @@
   dune
   (yojson (>= 2.1.1))
   (ppx_yojson_conv (>= v0.16.0))
-  (ppx_deriving (>= 5.2.1)))
+  (ppx_deriving (>= 5.2.1))
+  (ppx_here (>= v0.16.0)))
  (tags
   (topics "to describe" your project)))
 
