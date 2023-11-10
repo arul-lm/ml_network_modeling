@@ -61,6 +61,17 @@ let opt30b =
   |> Option.get
 ;;
 
+(* https://huggingface.co/facebook/opt-66b/blob/main/config.json *)
+let opt66b =
+  Transformer.make
+    ~embed_dim:9216
+    ~num_heads:72
+    ~num_layers:64
+    ~w_dtype:(module BF16)
+    ~optimizer:(module Adam)
+    ~is_train:true
+  |> Option.get
+       
 let bert_large =
   Transformer.make
     ~embed_dim:1024
