@@ -66,7 +66,9 @@ module InfinibandIC : InterConnect = struct
   let num_links = 18
 
   let link_bandwidth low_level_links =
-    bandwidth /. Int.to_float (num_links * low_level_links)
+    let res = bandwidth /. Int.to_float (num_links * low_level_links) in
+    (* Printf.printf "IB:%f\n" res; *)
+    res
   ;;
 
   let efficiency = 0.7

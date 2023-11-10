@@ -23,12 +23,10 @@ let make ~embed_dim ~num_heads ~num_layers ~w_dtype ~is_train ~optimizer =
   if rem <> 0 then None else Some t
 ;;
 
-let build t mpar (batch, seq) (node, node_count) (device, dev_count) =
+let build t mpar (batch, seq) (node, _node_count) (device, dev_count) =
   let h = embed_dim t in
   assert (num_heads t mod mpar = 0);
   assert (mpar mod dev_count = 0);
-  let total_devices = node_count * dev_count in
-  let dpar = total_devices / mpar in
   let make_t s = Tensor.make ~node ~device ~dtype:t.w_dtype s |> Option.get in
   let act = make_t [ batch; seq; h ] in
   (* layer_norm *)
@@ -67,14 +65,17 @@ let build t mpar (batch, seq) (node, node_count) (device, dev_count) =
       ~f:(fun idx -> layer_ops.(idx mod l_ops_count))
   in
   (* TODO: Replace last dim should be vocab *)
-  let final_loss_shard = make_t [ batch; seq; h / dpar ] in
-  let final_loss = make_t [ batch; seq; h ] in
-  if is_train t
-  then
-    Array.append
-      total_ops
-      [| AllReduce (mpar, dev_count, final_loss_shard) |> Op.( % )
-       ; AllReduce (total_devices, mpar, final_loss) |> Op.( % )
-      |]
-  else layer_ops
+  (* let total_devices = node_count * dev_count in *)
+  (* let dpar = total_devices / mpar in *)
+  (* let final_loss_shard = make_t [ batch; seq; h / dpar ] in *)
+  (* let final_loss = make_t [ batch; seq; h ] in *)
+  (* if is_train t *)
+  (* then *)
+  (*   Array.append *)
+  (*     total_ops *)
+  (*     [| AllReduce (mpar, dev_count, final_loss_shard) |> Op.( % ) *)
+  (*      ; AllReduce (total_devices, mpar, final_loss) |> Op.( % ) *)
+  (*     |] *)
+  (* else layer_ops *)
+  total_ops
 ;;

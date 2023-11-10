@@ -53,10 +53,16 @@ let ( * ) t n =
 
 let device t = t.device
 let node t = t.node
-let add_flops t flops = { t with flops }
-let add_mem t mem_used = { t with mem_used }
-let add_lat t lat = { t with latency = lat }
+
+let add_flops t flops =
+  let ff = t.flops in
+  let flops = Int.add flops ff in
+  { t with flops }
+;;
+
+let add_mem t mem_used = { t with mem_used = t.mem_used +. mem_used }
+let add_lat t lat = { t with latency = t.latency +. lat }
+let add_comm t comm_time = { t with comm_time = t.comm_time +. comm_time }
 let flops t = t.flops
 let latency t = t.latency
-let add_comm t comm_time = { t with comm_time }
 let comm_time t = t.comm_time

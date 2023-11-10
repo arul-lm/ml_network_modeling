@@ -49,14 +49,22 @@ module Clos : Level2 = struct
         comm_time
       in
       let all_reduce_1d shard dim =
-        let comm = reduce_scatter_1d shard dim (module Link_intf.NvLinkIC) ~low_lvl_count:1 in
+        let comm =
+          reduce_scatter_1d shard dim (module Link_intf.NvLinkIC) ~low_lvl_count:1
+        in
         comm *. 2.
       in
       let all_reduce_2d shard dim1 dim2 =
         let d_shard = shard /. Int.to_float dim1 in
         let intra_comm = all_reduce_1d d_shard dim2 in
         let inter_comm =
-          let comm = reduce_scatter_1d d_shard dim1 (module Link_intf.InfinibandIC) ~low_lvl_count:N.dev_count in
+          let comm =
+            reduce_scatter_1d
+              d_shard
+              dim1
+              (module Link_intf.InfinibandIC)
+              ~low_lvl_count:N.dev_count
+          in
           comm *. 2.
         in
         intra_comm +. inter_comm
