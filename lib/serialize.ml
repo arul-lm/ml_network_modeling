@@ -148,7 +148,7 @@ let link_data_of_l2 nodes (module L2 : Level2) =
 ;;
 
 let node_size = 12.0
-let device_row_off = node_size *. 4.
+let device_row_off = node_size *. 6.
 let device_col_off = node_size *. 3.
 let device_rows = 2
 let device_row_span = (node_size +. device_row_off) *. Int.to_float device_rows
@@ -248,8 +248,20 @@ let vertex_data_of_node (module N : Node) (node_stats : Stats.t array) =
 ;;
 
 let serialize_clos_dgx nodes ~file_name =
-  let model = Transformers.bert_large in
+  let model = Transformers.opt13b in
   let stats_array = Orchestrator.load_transformer model DGX_L1.node nodes in
+      (* Forward pass *)
+      (* let act = *)
+      (*   Tensor.make ~node ~device ~dtype:(module BF16) [ b; s; e ] *)
+      (*   |> Option.value_exn ~here:[%here] *)
+      (* in *)
+      (* let empty_stats = Stats.empty node device in *)
+      (* let run_fwd (a, s1) op = *)
+      (*   let a, s2 = forward_pass op a in *)
+      (*   a, Stats.(s1 + s2) *)
+      (* in *)
+      (* let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd comp_ops in *)
+      (* (\* Stdlib.Printf.printf "%f\n" (Stats.latency fwd_stats); *\) *)  
   let nodes_l = Array.to_list nodes in
   let vertices =
     Base.Array.fold stats_array ~init:[] ~f:(fun acc s ->

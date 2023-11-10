@@ -36,12 +36,12 @@ module MakeIntra (I : InterConnect) : IntraLink = struct
 end
 
 module NvLinkIC : InterConnect = struct
-  let name = "nvlink"
+  let name = "nvlink_v4"
   let bandwidth = 900.0
 end
 
 module InfinibandIC : InterConnect = struct
-  let name = "IB"
+  let name = "ConnectX-IB"
   let bandwidth = 400.0 (* connect x NIC *)
 end
 

@@ -13,6 +13,10 @@ module type Level2 = sig
           array
 
   val inter_link : (module InterLink)
+      (* Switch latency *)
+  (* NIC latency *)
+    (* package mesh latency *)
+  val hop_latency : float
 end
 
 module Clos : Level2 = struct
@@ -23,4 +27,7 @@ module Clos : Level2 = struct
   let switches = make_spines 1
   let inter_connections = Conn.connections switches DGX_L1.switches ~conn_type:`AllToAll
   let inter_link = (module Infiniband : InterLink)
+
+  let hop_latency = (100 * 2 + 100 * 2 + 20) 
+    
 end
