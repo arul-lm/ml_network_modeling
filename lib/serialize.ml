@@ -256,7 +256,7 @@ let vertex_data_of_node (module N : Node) (node_stats : Stats.t array) =
 
 let serialize_clos_dgx nodes ~file_name =
   let model = Transformers.opt13b in
-  let wl = Transformer_wl.make ~batch_size:32 ~seq_len:512 in
+  let wl = Transformer_wl.make ~batch_size:32 ~seq_len:512 ~mpar_factor:1 in
   let stats_array =
     Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
   in

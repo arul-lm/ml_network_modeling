@@ -71,8 +71,8 @@ let build t mpar (batch, seq) (node, node_count) (device, dev_count) =
   (* TODO: Replace last dim should be vocab *)
   let total_devices = node_count * dev_count in
   let dpar = total_devices / mpar in
-  let final_loss_shard = make_t [ batch; seq; h / dpar ] in
-  let final_loss = make_t [ batch; seq; h ] in
+  let final_loss_shard = make_t [ batch; seq; vocab_size t / dpar ] in
+  let final_loss = make_t [ batch; seq; vocab_size t] in
   if is_train t
   then
     Array.append

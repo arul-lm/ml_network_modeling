@@ -4,9 +4,9 @@ open Tensor_intf
 let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
   let open Base in
   let stats_array = Stats.stats_nodes nodes (module N) in
-  let mpar = N.dev_count * 5 in
   let node_count = Array.length nodes in
   let total_devices = node_count * N.dev_count in
+  let mpar = (Transformer_wl.mpar_factor wl) * N.dev_count in
   let dpar = total_devices / mpar in
   let optimizer = Transformer.optimizer t in
   let b = Transformer_wl.batch_size wl in
