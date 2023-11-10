@@ -33,13 +33,13 @@ module Clos : Level2 = struct
       let (module L1) = l1 in
       let (module N) = L1.node in
       let (module IN) = N.intra_link in
-      let reduce_scatter_1d shard dim (module IN : InterConnect) =
+      let reduce_scatter_1d shard dim (module IN : InterConnect) ~low_lvl_count =
         let num_steps = Int.to_float (dim - 1) in
         (* bxsx(e/d) *)
         let size_per_step = shard /. Int.to_float dim in
         let send_vol = size_per_step in
         let recv_vol = size_per_step in
-        let link_bw = IN.link_bandwidth 1 in
+        let link_bw = IN.link_bandwidth low_lvl_count in
         let time_per_step =
           (send_vol +. recv_vol) /. (link_bw *. Int.to_float IN.num_links)
         in
@@ -49,13 +49,15 @@ module Clos : Level2 = struct
         comm_time
       in
       let all_reduce_1d shard dim =
-        reduce_scatter_1d shard dim (module Link_intf.NvLinkIC) *. 2.
+        let comm = reduce_scatter_1d shard dim (module Link_intf.NvLinkIC) ~low_lvl_count:1 in
+        comm *. 2.
       in
       let all_reduce_2d shard dim1 dim2 =
         let d_shard = shard /. Int.to_float dim1 in
         let intra_comm = all_reduce_1d d_shard dim2 in
         let inter_comm =
-          reduce_scatter_1d d_shard dim1 (module Link_intf.InfinibandIC) *. 2.
+          let comm = reduce_scatter_1d d_shard dim1 (module Link_intf.InfinibandIC) ~low_lvl_count:N.dev_count in
+          comm *. 2.
         in
         intra_comm +. inter_comm
       in

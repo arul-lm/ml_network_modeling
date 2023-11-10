@@ -38,10 +38,19 @@ let ( + ) t1 t2 =
       mem_used = t1.mem_used +. t2.mem_used
     ; flops = t1.flops + t2.flops
     ; latency = t1.latency +. t2.latency
+    ; comm_time = t1.comm_time +. t2.comm_time
     }
 ;;
 
-let ( * ) t n = { t with mem_used = t.mem_used *. n; flops = t.flops * 3 }
+let ( * ) t n =
+  { t with
+    mem_used = t.mem_used *. n
+  ; flops = t.flops * Int.of_float n
+  ; latency = t.latency *. n
+  ; comm_time = t.comm_time *. n
+  }
+;;
+
 let device t = t.device
 let node t = t.node
 let add_flops t flops = { t with flops }
