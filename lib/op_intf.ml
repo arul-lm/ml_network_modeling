@@ -16,7 +16,7 @@ type compute_op =
   | WeightOp of weight_op
   | NoParamOp of no_param_op
 
-type comm_op = AllReduce of int * int * Tensor.t
+type comm_op = AllReduce of string * int * int * Tensor.t
 
 (* Need type hierarchy. Ops with weights and Ops only used in forward/backward passes *)
 type op_type =

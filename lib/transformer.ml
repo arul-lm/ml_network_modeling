@@ -55,11 +55,12 @@ let build t mpar (batch, seq) (node, node_count) (device, dev_count) =
      ; Softmax (node, device) |> Op.( & )
      ; AV (make_t [ batch; seq; h / mpar ]) |> Op.( & )
      ; w_o
-     ; AllReduce (mpar, dev_count, act) |> Op.( % )
+     (* mdl_par; dev_par *)
+     ; AllReduce ("post_attn", mpar, dev_count, act) |> Op.( % )
      ; lnorm
      ; mlp_0
      ; mlp_1
-     ; AllReduce (mpar, dev_count, act) |> Op.( % )
+     ; AllReduce ("post_mlp", mpar, dev_count, act) |> Op.( % )
     |]
   in
   let l_ops_count = Array.length layer_ops in
@@ -77,8 +78,8 @@ let build t mpar (batch, seq) (node, node_count) (device, dev_count) =
   then
     Array.append
       total_ops
-      [| AllReduce (mpar, dev_count, final_loss_shard) |> Op.( % )
-       ; AllReduce (total_devices, mpar, final_loss) |> Op.( % )
+      [| AllReduce ("loss_grad_model_par", mpar, dev_count, final_loss_shard) |> Op.( % )
+       ; AllReduce ("loss_grad_data_par", total_devices, mpar, final_loss) |> Op.( % )
       |]
   else layer_ops
 ;;

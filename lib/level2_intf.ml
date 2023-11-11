@@ -27,7 +27,7 @@ module Clos : Level2 = struct
   let inter_link = (module Infiniband : InterLink)
 
   let handle_comm = function
-    | Op_intf.AllReduce (mpar, nd, t) ->
+    | Op_intf.AllReduce (op_name, mpar, nd, t) ->
       assert (mpar mod nd = 0);
       let size = Tensor.size t in
       let (module L1) = l1 in
