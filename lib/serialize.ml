@@ -53,16 +53,17 @@ type comm_op_stats =
   { op_name : string
   ; size_in_bytes : float
   ; devices_involved : int
+  ; comm_time : float
   }
-[@@deriving yojson]
+[@@deriving yojson, make]
 
 type comm_stats =
   { model : string
-  ; nodes_count : int
-  ; devices_count : int
+  ; node_count : int
+  ; device_count : int
   ; comm_op_stats : comm_op_stats list
   }
-[@@deriving yojson]
+[@@deriving yojson, make]
 
 let sanitize_show_str str = String.split_on_char '.' str |> List.rev |> List.hd
 
@@ -269,15 +270,30 @@ let vertex_data_of_node (module N : Node) (node_stats : Stats.t array) =
   make_vertices cx cy rows row_off col_off start group vertex_type D.name devices
 ;;
 
-let serialize_comm comm_ops ~f =
+let serialize_comm model node_count device_count comm_ops ~f =
   let open Base in
   let ht = Hashtbl.create ~size:32 (module String) in
   let handle_comm = function
-    | Op_intf.AllReduce (op_name, _, _, _) as op ->
+    | Op_intf.AllReduce (op_name, dim1, _dim2, t) as op ->
       let comm_time = f op in
-      Hashtbl.add_exn ht ~key:op_name ~data:comm_time
+      let size = Tensor.size t in
+      Hashtbl.add_multi ht ~key:op_name ~data:(comm_time, size, dim1)
   in
-  Array.iter comm_ops ~f:handle_comm
+  Array.iter comm_ops ~f:handle_comm;
+  let op_stats = ref [] in
+  let handle_op_stats ~key ~data =
+    let comm_op_stats =
+      List.mapi data ~f:(fun id (comm_time, size, dev) ->
+        let op_name = key ^ "_" ^ Int.to_string id in
+        make_comm_op_stats ~op_name ~size_in_bytes:size ~devices_involved:dev ~comm_time)
+    in
+    op_stats := comm_op_stats :: !op_stats
+  in
+  Hashtbl.iteri ht ~f:handle_op_stats;
+  let comm_op_stats = List.concat !op_stats in
+  make_comm_stats ~model ~node_count ~device_count ~comm_op_stats ()
+  |> yojson_of_comm_stats
+  |> Yojson.Safe.to_file "comms.json"
 ;;
 
 let serialize_clos_dgx nodes ~file_name =
@@ -286,7 +302,13 @@ let serialize_clos_dgx nodes ~file_name =
   let comm_ops, stats_array =
     Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
   in
-  serialize_comm comm_ops ~f:Clos.handle_comm;
+  let (module N) = DGX_L1.node in
+  serialize_comm
+    (Transformer.name model)
+    (Array.length nodes)
+    N.dev_count
+    comm_ops
+    ~f:Clos.handle_comm;
   let nodes_l = Array.to_list nodes in
   let vertices =
     Base.Array.fold stats_array ~init:[] ~f:(fun acc s ->
