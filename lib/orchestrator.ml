@@ -10,8 +10,9 @@ let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
   let dpar = total_devices / mpar in
   let optimizer = Transformer.optimizer t in
   let b = Transformer_wl.batch_size wl in
+  assert (b % dpar = 0);
   let s = Transformer_wl.seq_len wl in
-  let e = Transformer.embed_dim t in
+  let e = Transformer.embed_dim t in  
   let forward_pass = Op.forward N.device in
   let handle_node node =
     let { id = node_id; _ } = node in
