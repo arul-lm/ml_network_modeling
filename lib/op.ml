@@ -73,7 +73,7 @@ let matmul_wrapper (module D : Device) x y y' =
   let out, s = matmul x y' in
   let m_reads = Tensor.size x +. Tensor.size y in
   let lat = matmul_lat (module D) (Tensor.dtype x) (Stats.flops s) m_reads in
-  let s = Stats.add_lat s lat in
+  let s = Stats.add_op_time s lat in
   out, s
 ;;
 

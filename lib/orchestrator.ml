@@ -54,7 +54,7 @@ let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
       (* Comm ops *)
       let run_comm acc op = Stats.add_comm acc (comm_f op) in
       let comm_stats = Array.fold ~init:empty_stats ~f:run_comm comm_ops in
-      Stdlib.Printf.printf "Lat:%f\n" (Stats.latency fwd_stats);
+      Stdlib.Printf.printf "Lat:%f\n" (Stats.op_time fwd_stats);
       Stdlib.Printf.printf "Comm:%f\n" (Stats.comm_time comm_stats);
       stats_array.(node_id).(device_id)
       <- Stats.(weight_stats + opt_stats + fwd_stats + comm_stats)
