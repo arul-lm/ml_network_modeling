@@ -13,6 +13,7 @@ module type Transformer = sig
   val is_train : t -> bool
   val optimizer : t -> (module Optimizer)
   val vocab_size : t -> int
+  val name : t -> string
 
   val make
     :  embed_dim:int
@@ -22,6 +23,7 @@ module type Transformer = sig
     -> is_train:bool
     -> optimizer:(module Optimizer)
     -> vocab_size:int
+    -> name:string
     -> t option
 
   val build

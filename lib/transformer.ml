@@ -9,8 +9,10 @@ type t =
   ; is_train : bool
   ; optimizer : (module Optimizer)
   ; vocab_size : int
+  ; name : string
   }
 
+let name t = t.name
 let embed_dim t = t.embed_dim
 let num_heads t = t.num_heads
 let num_layers t = t.num_layers
@@ -19,9 +21,10 @@ let is_train t = t.is_train
 let optimizer t = t.optimizer
 let vocab_size t = t.vocab_size
 
-let make ~embed_dim ~num_heads ~num_layers ~w_dtype ~is_train ~optimizer ~vocab_size =
+let make ~embed_dim ~num_heads ~num_layers ~w_dtype ~is_train ~optimizer ~vocab_size ~name
+  =
   let t =
-    { embed_dim; num_heads; num_layers; w_dtype; is_train; optimizer; vocab_size }
+    { embed_dim; num_heads; num_layers; w_dtype; is_train; optimizer; vocab_size; name }
   in
   let rem = embed_dim mod num_heads in
   if rem <> 0 then None else Some t
@@ -55,7 +58,6 @@ let build t mpar (batch, seq) (node, node_count) (device, dev_count) =
      ; Softmax (node, device) |> Op.( & )
      ; AV (make_t [ batch; seq; h / mpar ]) |> Op.( & )
      ; w_o
-     (* mdl_par; dev_par *)
      ; AllReduce ("post_attn", mpar, dev_count, act) |> Op.( % )
      ; lnorm
      ; mlp_0
@@ -73,7 +75,7 @@ let build t mpar (batch, seq) (node, node_count) (device, dev_count) =
   let total_devices = node_count * dev_count in
   let dpar = total_devices / mpar in
   let final_loss_shard = make_t [ batch; seq; vocab_size t / dpar ] in
-  let final_loss = make_t [ batch; seq; vocab_size t] in
+  let final_loss = make_t [ batch; seq; vocab_size t ] in
   if is_train t
   then
     Array.append

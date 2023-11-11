@@ -6,14 +6,15 @@ let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
   let stats_array = Stats.stats_nodes nodes (module N) in
   let node_count = Array.length nodes in
   let total_devices = node_count * N.dev_count in
-  let mpar = (Transformer_wl.mpar_factor wl) * N.dev_count in
+  let mpar = Transformer_wl.mpar_factor wl * N.dev_count in
   let dpar = total_devices / mpar in
   let optimizer = Transformer.optimizer t in
   let b = Transformer_wl.batch_size wl in
   assert (b % dpar = 0);
   let s = Transformer_wl.seq_len wl in
-  let e = Transformer.embed_dim t in  
+  let e = Transformer.embed_dim t in
   let forward_pass = Op.forward N.device in
+  let comm_ops_ref : Op_intf.comm_op array option ref = ref None in
   let handle_node node =
     let { id = node_id; _ } = node in
     let handle_dev device =
@@ -53,6 +54,7 @@ let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
       let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd comp_ops in
       (* Comm ops *)
       let run_comm acc op = Stats.add_comm acc (comm_f op) in
+      if Option.is_none !comm_ops_ref then comm_ops_ref := Some comm_ops;
       let comm_stats = Array.fold ~init:empty_stats ~f:run_comm comm_ops in
       Stdlib.Printf.printf "Lat:%f\n" (Stats.op_time fwd_stats);
       Stdlib.Printf.printf "Comm:%f\n" (Stats.comm_time comm_stats);
@@ -62,5 +64,5 @@ let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
     Array.iter ~f:handle_dev N.devices
   in
   Array.iter ~f:handle_node nodes;
-  stats_array
+  Option.value_exn !comm_ops_ref, stats_array
 ;;

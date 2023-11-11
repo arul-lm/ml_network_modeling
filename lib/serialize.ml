@@ -49,6 +49,21 @@ type usage_stats =
   ; flops : int
   }
 
+type comm_op_stats =
+  { op_name : string
+  ; size_in_bytes : float
+  ; devices_involved : int
+  }
+[@@deriving yojson]
+
+type comm_stats =
+  { model : string
+  ; nodes_count : int
+  ; devices_count : int
+  ; comm_op_stats : comm_op_stats list
+  }
+[@@deriving yojson]
+
 let sanitize_show_str str = String.split_on_char '.' str |> List.rev |> List.hd
 
 let link_data_of_node (module N : Node) node_data =
@@ -254,12 +269,24 @@ let vertex_data_of_node (module N : Node) (node_stats : Stats.t array) =
   make_vertices cx cy rows row_off col_off start group vertex_type D.name devices
 ;;
 
+let serialize_comm comm_ops ~f =
+  let open Base in
+  let ht = Hashtbl.create ~size:32 (module String) in
+  let handle_comm = function
+    | Op_intf.AllReduce (op_name, _, _, _) as op ->
+      let comm_time = f op in
+      Hashtbl.add_exn ht ~key:op_name ~data:comm_time
+  in
+  Array.iter comm_ops ~f:handle_comm
+;;
+
 let serialize_clos_dgx nodes ~file_name =
   let model = Transformers.opt13b in
   let wl = Transformer_wl.make ~batch_size:32 ~seq_len:512 ~mpar_factor:1 in
-  let stats_array =
+  let comm_ops, stats_array =
     Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
   in
+  serialize_comm comm_ops ~f:Clos.handle_comm;
   let nodes_l = Array.to_list nodes in
   let vertices =
     Base.Array.fold stats_array ~init:[] ~f:(fun acc s ->

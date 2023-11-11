@@ -7,4 +7,4 @@ type t =
 
 let batch_size t = t.batch_size
 let seq_len t = t.seq_len
-let mpar_factor t = t.mpar_factor                  
+let mpar_factor t = t.mpar_factor

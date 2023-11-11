@@ -11,6 +11,7 @@ let opt175b =
     ~is_train:true
     ~optimizer:(module Adam)
     ~vocab_size:50272
+    ~name:"opt175b"
   |> Option.get
 ;;
 
@@ -24,6 +25,7 @@ let opt1_3b =
     ~optimizer:(module Adam)
     ~is_train:true
     ~vocab_size:50272
+    ~name:"opt1.3b"
   |> Option.get
 ;;
 
@@ -37,6 +39,7 @@ let opt6_7b =
     ~optimizer:(module Adam)
     ~is_train:true
     ~vocab_size:50272
+    ~name:"opt6.7b"
   |> Option.get
 ;;
 
@@ -50,6 +53,7 @@ let opt13b =
     ~optimizer:(module Adam)
     ~is_train:true
     ~vocab_size:50272
+    ~name:"opt13b"
   |> Option.get
 ;;
 
@@ -63,6 +67,7 @@ let opt30b =
     ~optimizer:(module Adam)
     ~is_train:true
     ~vocab_size:50272
+    ~name:"opt30b"
   |> Option.get
 ;;
 
@@ -76,6 +81,7 @@ let opt66b =
     ~optimizer:(module Adam)
     ~is_train:true
     ~vocab_size:50272
+    ~name:"opt66b"
   |> Option.get
 ;;
 
@@ -88,5 +94,6 @@ let bert_large =
     ~optimizer:(module Adam)
     ~is_train:true
     ~vocab_size:28996
+    ~name:"bert_large"
   |> Option.get
 ;;
