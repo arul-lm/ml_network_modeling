@@ -25,7 +25,11 @@
   (yojson (>= 2.1.1))
   (ppx_yojson_conv (>= v0.16.0))
   (ppx_deriving (>= 5.2.1))
-  (ppx_here (>= v0.16.0)))
+  (ppx_here (>= v0.16.0))
+  (bonsai (>= v0.16.0))
+  (conduit-lwt (>= 6.2.0))
+  (cohttp-lwt-unix (>= 5.3.0))
+  (cohttp-async (>= 5.3.0)))
  (tags
   (topics "to describe" your project)))
 
