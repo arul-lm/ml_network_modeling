@@ -86,7 +86,7 @@ let link_data_of_node (module N : Node) node_data =
            ; index = link_id
            ; link_type
            ; stroke_width = bw /. IA.bandwidth *. 2.
-           ; bandwidth = bw
+           ; bandwidth = bw /. Int.to_float Units.giga_b (* Gbps *)
            }
            :: !result
       in
@@ -121,7 +121,7 @@ let link_data_of_l1 nodes (module L1 : Level1) =
            ; index = link_id
            ; link_type
            ; stroke_width = bw /. IA.bandwidth *. 2.
-           ; bandwidth = bw
+           ; bandwidth = bw /. Int.to_float Units.giga_b
            }
            :: !result
       in
@@ -298,7 +298,7 @@ let serialize_comm model node_count device_count comm_ops ~f =
 
 let serialize_clos_dgx nodes ~file_name =
   let model = Transformers.opt13b in
-  let wl = Transformer_wl.make ~batch_size:32 ~seq_len:512 ~mpar_factor:1 in
+  let wl = Transformer_wl.make ~batch_size:32 ~seq_len:512 ~mpar_factor:5 in
   let comm_ops, stats_array =
     Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
   in
