@@ -36,7 +36,9 @@ module Model = struct
 end
 
 module Topo = struct
-  type t = Nvidia_DGX_Fat_Tree of unit [@@deriving sexp_of, typed_variants]
+  open Ml_network_modeling
+
+  type t = Nvidia_DGX_Fat_Tree [@@deriving sexp_of, typed_variants]
 
   let label_for_variant = `Inferred
   let initial_choice = `Empty
@@ -44,15 +46,23 @@ module Topo = struct
   let form_for_variant : type a. a Typed_variant.t -> a Form.t Computation.t = function
     | Nvidia_DGX_Fat_Tree -> Bonsai.const (Form.return ())
   ;;
+
+  let to_l2 = function
+    | Nvidia_DGX_Fat_Tree -> (module Level2_intf.Clos : Level2_intf.Level2)
+  ;;
 end
 
 let topo_form = Form.Typed.Variant.make (module Topo)
 let model_form = Form.Typed.Variant.make (module Model)
-let handle_click _e = Effect.print_s (Sexplib0.Sexp.Atom "loading graph...")
 
 let component =
   let%map.Computation dyn = topo_form
   and model = model_form in
+  let handle_click _e =
+    let topo = Form.value_or_default dyn ~default:Topo.Nvidia_DGX_Fat_Tree in
+    let (module L2) = Topo.to_l2 topo in
+    Effect.print_s (Sexplib0.Sexp.Atom "loading graph...")
+  in
   let graph_btn =
     Vdom.Node.button
       ~attrs:[ Vdom.Attr.on_click handle_click ]
