@@ -296,9 +296,9 @@ let serialize_comm model node_count device_count comm_ops ~f =
   |> Yojson.Safe.to_file "comms.json"
 ;;
 
-let serialize_clos_dgx nodes ~file_name =
-  let model = Transformers.opt13b in
-  let wl = Transformer_wl.make ~batch_size:32 ~seq_len:512 ~mpar_factor:5 in
+let serialize_clos_dgx nodes model wl ~file_name =
+  (* let model = Transformers.opt13b in *)
+  (* let wl = Transformer_wl.make ~batch_size:32 ~seq_len:512 ~mpar_factor:5 in *)
   let comm_ops, stats_array =
     Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
   in

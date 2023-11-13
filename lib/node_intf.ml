@@ -26,7 +26,7 @@ module DGX : Node = struct
   let intra_connections = Conn.connections devices devices ~conn_type:`AllToAll
 end
 
-let make_dgx n =
+let make_nodes n =
   let result : (module Node) node_data array = Array.init n (fun id -> { id }) in
   result
 ;;
