@@ -291,9 +291,12 @@ let serialize_comm model node_count device_count comm_ops ~f =
   in
   Hashtbl.iteri ht ~f:handle_op_stats;
   let comm_op_stats = List.concat !op_stats in
-  make_comm_stats ~model ~node_count ~device_count ~comm_op_stats ()
-  |> yojson_of_comm_stats
-  |> Yojson.Safe.to_file "comms.json"
+  let cs =
+    make_comm_stats ~model ~node_count ~device_count ~comm_op_stats ()
+    |> yojson_of_comm_stats
+  in
+  Yojson.Safe.to_file "comms.json" cs;
+  Yojson.Safe.pretty_to_string (yojson_of_list yojson_of_comm_op_stats comm_op_stats)
 ;;
 
 type time_stats =
@@ -309,12 +312,26 @@ let serialize_time nodes model wl =
   let stat = stats_array.(0).(0) in
   let compute_time = Stats.op_time stat *. 2. in
   let comm_time = Stats.comm_time stat in
-  let xs = [ { type_ = "compute"; time = compute_time }
-  ; { type_ = "comm"; time = comm_time }
-  ; { type_ = "total"; time = compute_time +. comm_time }
-  ] in
-  yojson_of_list (yojson_of_time_stats) xs |> Yojson.Safe.pretty_to_string
-    
+  let xs =
+    [ { type_ = "compute"; time = compute_time }
+    ; { type_ = "comm"; time = comm_time }
+    ; { type_ = "total"; time = compute_time +. comm_time }
+    ]
+  in
+  yojson_of_list yojson_of_time_stats xs |> Yojson.Safe.pretty_to_string
+;;
+
+let serialize_comm_time nodes model wl =
+  let comm_ops, _stats_array =
+    Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
+  in
+  let (module N) = DGX_L1.node in
+  serialize_comm
+    (Transformer.name model)
+    (Array.length nodes)
+    N.dev_count
+    comm_ops
+    ~f:Clos.handle_comm
 ;;
 
 let serialize_clos_dgx nodes model wl ~file_name =

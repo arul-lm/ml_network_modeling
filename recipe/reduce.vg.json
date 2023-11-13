@@ -1,0 +1,109 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "A basic bar chart example, with value labels shown upon mouse hover.",
+  "width": 800,
+  "height": 400,
+  "padding": 20,
+  "data": [
+    {
+      "name": "reduce-stats",
+      "values": [
+          {"op_name": "A", "comm_time": 28, "size_involved": 123123},
+          {"op_name": "B", "comm_time": 55, "size_involved": 123123},
+          {"op_name": "C", "comm_time": 43, "size_involved": 123123},
+          {"op_name": "D", "comm_time": 91, "size_involved": 123123},
+          {"op_name": "E", "comm_time": 81, "size_involved": 123123},
+          {"op_name": "F", "comm_time": 53, "size_involved": 123123},
+          {"op_name": "G", "comm_time": 19, "size_involved": 123123},
+          {"op_name": "H", "comm_time": 87, "size_involved": 123123}
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "name": "tooltip",
+      "value": {},
+      "on": [
+        {"events": "rect:mouseover", "update": "datum"},
+        {"events": "rect:mouseout", "update": "{}"}
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "xscale",
+      "type": "band",
+      "domain": {"data": "reduce-stats", "field": "op_name"},
+      "range": "width",
+      "padding": 0.05,
+      "round": true
+    },
+    {
+      "name": "yscale",
+      "domain": {"data": "reduce-stats", "field": "comm_time"},
+      "nice": true,
+      "range": "height"
+    },
+    {
+      "name": "size_scale",
+      "domain": {"data": "reduce-stats", "field": "size_in_bytes"},
+      "nice": true,
+      "range": "height"
+    },
+    {
+      "name": "device_scale",
+      "domain": {"data": "reduce-stats", "field": "devices_involved"},
+      "nice": true,
+      "range": "height"
+    }
+  ],
+  "axes": [
+    {"orient": "bottom", "scale": "xscale", "encode": {"labels": {"update":{"angle":{"value": 270},"fontSize":{"value": 15}, "align":{"value": "right"}}}}},
+    {"orient": "left", "scale": "yscale"}
+  ],
+  "marks": [
+    {
+      "type": "group",
+      "style": "cell",
+      "marks": [
+        {
+          "type": "rect",
+          "from": {"data": "reduce-stats"},
+          "encode": {
+            "enter": {
+              "x": {"scale": "xscale", "field": "op_name"},
+              "width": {"scale": "xscale", "band": 1},
+              "y": {"scale": "yscale", "field": "comm_time"},
+              "y2": {"scale": "yscale", "value": 0}
+            },
+            "update": {"fill": {"value": "steelblue"}},
+            "hover": {"fill": {"value": "red"}}
+          }
+        },
+        {
+          "type": "text",
+          "encode": {
+            "enter": {
+              "align": {"value": "center"},
+              "baseline": {"value": "bottom"},
+              "fill": {"value": "#333"}
+            },
+            "update": {
+              "x": {"scale": "xscale", "signal": "tooltip.op_name", "band": 0.5},
+              "y": {
+                "scale": "yscale",
+                "signal": "tooltip.comm_time",
+                "offset": -2
+              },
+              "text": {"signal": "tooltip.op_name"},
+              "fillOpacity": [
+                {"test": "datum === tooltip", "value": 0},
+                {"value": 1}
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

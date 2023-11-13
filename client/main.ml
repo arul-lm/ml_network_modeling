@@ -115,49 +115,65 @@ let component =
     let nodes = Node_intf.make_nodes node_count in
     let model = Model.get_model mdl in
     let wl = Model.to_workload N.dev_count mdl in
-    let update_fn = match btn_type with
-    | "time" ->
-      let time_stats = Serialize.serialize_time nodes model wl in
-      let update_fn () =
-      Effect.of_deferred_fun
-        (fun _ ->
-          let%map.Deferred () = Async_kernel.after (Time_ns.Span.of_sec 1.) in
-          Vega.update_dataset ~name:"time-stats" (Vega.json_parse time_stats);
-          ) ()
-      in
-      update_fn
-    | _ ->
-    let node_data, link_data =
-      Serialize.serialize_clos_dgx nodes model wl ~file_name:"data/clos.json"
+    let update_fn =
+      match btn_type with
+      | "reduce" ->
+        let reduce_stats = Serialize.serialize_comm_time nodes model wl in
+        let update_fn () =
+          Effect.of_deferred_fun
+            (fun _ ->
+              let%map.Deferred () = Async_kernel.after (Time_ns.Span.of_sec 1.) in
+              Vega.update_dataset ~name:"reduce-stats" (Vega.json_parse reduce_stats))
+            ()
+        in
+        update_fn
+      | "time" ->
+        let time_stats = Serialize.serialize_time nodes model wl in
+        let update_fn () =
+          Effect.of_deferred_fun
+            (fun _ ->
+              let%map.Deferred () = Async_kernel.after (Time_ns.Span.of_sec 1.) in
+              Vega.update_dataset ~name:"time-stats" (Vega.json_parse time_stats))
+            ()
+        in
+        update_fn
+      | _ ->
+        let node_data, link_data =
+          Serialize.serialize_clos_dgx nodes model wl ~file_name:"data/clos.json"
+        in
+        let update_fn () =
+          Effect.of_deferred_fun
+            (fun _ ->
+              let%map.Deferred () = Async_kernel.after (Time_ns.Span.of_sec 1.) in
+              Vega.update_dataset ~name:"node-data" (Vega.json_parse node_data);
+              Vega.update_dataset ~name:"link-data" (Vega.json_parse link_data))
+            ()
+        in
+        update_fn
     in
-    let update_fn () =
-      Effect.of_deferred_fun
-        (fun _ ->
-          let%map.Deferred () = Async_kernel.after (Time_ns.Span.of_sec 1.) in
-          Vega.update_dataset ~name:"node-data" (Vega.json_parse node_data);
-          Vega.update_dataset ~name:"link-data" (Vega.json_parse link_data))
-        ()
-    in
-    update_fn
-    in
-          fetch_spec btn_type update_fn
+    fetch_spec btn_type update_fn
   in
   let graph_btn =
     Vdom.Node.button
-      ~attrs:[ Vdom.Attr.on_click (handle_click "graph")]
+      ~attrs:[ Vdom.Attr.on_click (handle_click "graph") ]
       [ Vdom.Node.Text "show graph" ]
   in
   let time_btn =
     Vdom.Node.button
-      ~attrs:[ Vdom.Attr.on_click (handle_click "time")]
+      ~attrs:[ Vdom.Attr.on_click (handle_click "time") ]
       [ Vdom.Node.Text "show time" ]
   in
-  
+  let reduce_btn =
+    Vdom.Node.button
+      ~attrs:[ Vdom.Attr.on_click (handle_click "reduce") ]
+      [ Vdom.Node.Text "show reduce" ]
+  in
   Vdom.Node.div
     [ Form.View.to_vdom (Form.view (Form.label "Select Topology" dyn))
     ; Form.View.to_vdom (Form.view (Form.label "Select Model" model))
     ; graph_btn
     ; time_btn
+    ; reduce_btn
     ]
 ;;
 
