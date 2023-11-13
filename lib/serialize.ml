@@ -321,5 +321,7 @@ let serialize_clos_dgx nodes model wl ~file_name =
   let links = links @ link_data_of_l1 nodes (module DGX_L1) in
   let links = links @ link_data_of_l2 nodes (module Clos) in
   let g = yojson_of_graph { vertices; links } in
+  let write_to_ch out_ch = Yojson.Safe.to_channel out_ch g in
+  Stdlib.Out_channel.with_open_text file_name write_to_ch;
   Yojson.Safe.to_file file_name g
 ;;

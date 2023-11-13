@@ -1,8 +1,8 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "description": "A node-link diagram with force-directed layout, depicting character co-occurrence in the novel Les Misérables.",
-  "width": 700,
-  "height": 1200,
+  "width": 800,
+  "height": 2000,
   "padding": 0,
   "autosize": "none",
   "signals": [
@@ -160,26 +160,7 @@
           "targetY": "datum.target.y"
         }
       ]
-    },
-    {
-      "type": "text",
-      "interactive": false,
-      "from": {"data": "node-data"},
-      "encode": {
-        "enter": {
-          "align": {"value": "center"},
-          "baseline": {"value": "middle"},
-          "fontSize": {"value": 8},
-          "fontWeight": {"value": "bold"},
-          "text": {"field": "name"}
-        },
-        "update": {
-          "dx": {"value": 120},
-          "dy": {"value": 150},
-          "x": {"field": "centroid[0]"},
-          "y": {"field": "centroid[1]"}
-        }
-      }
     }
   ]
 }
+

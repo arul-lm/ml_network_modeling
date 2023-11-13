@@ -3,6 +3,9 @@ open! Bonsai_web
 module Form = Bonsai_web_ui_form
 module E = Form.Elements
 open Ml_network_modeling
+open! Async_kernel
+open! Async_js
+(* open! Js_of_ocaml *)
 
 module ModelParams = struct
   type t =
@@ -77,6 +80,26 @@ let default_model_params =
   ModelParams.{ node_count = 10; model_par = 8; batch_size = 32; seq_len = 512 }
 ;;
 
+let handle_spec_change s =
+  let json_spec = Vega.json_parse s in
+  let _ = Vega.vega_embed json_spec in
+  ()
+;;
+
+let fetch_spec spec_name =
+  let open Effect.Let_syntax in
+  let%bind response =
+    Effect.of_deferred_fun
+      (fun p -> Async_js.Http.get ~arguments:[] p)
+      ("/recipe/" ^ spec_name ^ ".vg.json")
+  in
+  if Core.Or_error.is_error response
+  then Effect.Ignore
+  else (
+    let spec = Core.Or_error.ok_exn response in
+    Effect.return (handle_spec_change spec))
+;;
+
 let component =
   let%map.Computation dyn = topo_form
   and model = model_form in
@@ -90,9 +113,10 @@ let component =
     let nodes = Node_intf.make_nodes node_count in
     let model = Model.get_model mdl in
     let wl = Model.to_workload N.dev_count mdl in
-    Serialize.serialize_clos_dgx nodes model wl ~file_name:"clos.json";
+    Serialize.serialize_clos_dgx nodes model wl ~file_name:"data/clos.json";
+    fetch_spec "graph"
     (* let mpar = Model.get_model_par mdl |> Int.to_string in *)
-    Effect.print_s (Sexplib0.Sexp.Atom ("loading graph..." ^ L2.name))
+    (* Effect.print_s (Sexplib0.Sexp.Atom ("loading graph..." ^ L2.name)) *)
   in
   let graph_btn =
     Vdom.Node.button
