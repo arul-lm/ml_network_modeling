@@ -86,7 +86,7 @@ let link_data_of_node (module N : Node) node_data =
            ; index = link_id
            ; link_type
            ; stroke_width = bw /. IA.bandwidth *. 2.
-           ; bandwidth = bw /. Int.to_float Units.giga_b (* Gbps *)
+           ; bandwidth = bw /. Int64.to_float Units.giga_b (* Gbps *)
            }
            :: !result
       in
@@ -121,7 +121,7 @@ let link_data_of_l1 nodes (module L1 : Level1) =
            ; index = link_id
            ; link_type
            ; stroke_width = bw /. IA.bandwidth *. 2.
-           ; bandwidth = bw /. Int.to_float Units.giga_b
+           ; bandwidth = bw /. Int64.to_float Units.giga_b
            }
            :: !result
       in
@@ -195,7 +195,7 @@ let make_vertices cx cy rows row_off col_off start group vertex_type name vs =
     let cx_off = Int.to_float row_id *. row_off in
     let cy_off = Int.to_float col_id *. col_off in
     let centroid = cx +. cx_off, cy +. cy_off in
-    let giga_float = Int.to_float Units.giga_b in
+    let giga_float = Int64.to_float Units.giga_b in
     let mem_used = mem_used /. giga_float in
     let mem_cap = mem_cap /. giga_float in
     result
@@ -299,16 +299,16 @@ let serialize_comm model node_count device_count comm_ops ~f =
 let serialize_clos_dgx nodes model wl ~file_name =
   (* let model = Transformers.opt13b in *)
   (* let wl = Transformer_wl.make ~batch_size:32 ~seq_len:512 ~mpar_factor:5 in *)
-  let comm_ops, stats_array =
+  let _comm_ops, stats_array =
     Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
   in
   let (module N) = DGX_L1.node in
-  serialize_comm
-    (Transformer.name model)
-    (Array.length nodes)
-    N.dev_count
-    comm_ops
-    ~f:Clos.handle_comm;
+  (* serialize_comm *)
+  (*   (Transformer.name model) *)
+  (*   (Array.length nodes) *)
+  (*   N.dev_count *)
+  (*   comm_ops *)
+  (*   ~f:Clos.handle_comm; *)
   let nodes_l = Array.to_list nodes in
   let vertices =
     Base.Array.fold stats_array ~init:[] ~f:(fun acc s ->
@@ -321,7 +321,14 @@ let serialize_clos_dgx nodes model wl ~file_name =
   let links = links @ link_data_of_l1 nodes (module DGX_L1) in
   let links = links @ link_data_of_l2 nodes (module Clos) in
   let g = yojson_of_graph { vertices; links } in
-  let write_to_ch out_ch = Yojson.Safe.to_channel out_ch g in
-  Stdlib.Out_channel.with_open_text file_name write_to_ch;
-  Yojson.Safe.to_file file_name g
+  Yojson.Safe.to_file file_name g;
+  let node_data = yojson_of_list yojson_of_vertex_data vertices in
+  let link_data = yojson_of_list yojson_of_link_data links in
+  let node_data = Yojson.Safe.pretty_to_string node_data in
+  let link_data = Yojson.Safe.pretty_to_string link_data in
+  node_data, link_data
 ;;
+(* let write_to_ch out_ch = Yojson.Safe.to_channel out_ch g in *)
+(* Stdlib.Out_channel.with_open_text file_name write_to_ch *)
+
+(* Yojson.Safe.pretty_to_string g |> Stdlib.Printf.printf "%s\n" *)

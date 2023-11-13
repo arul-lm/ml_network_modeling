@@ -45,7 +45,7 @@ end
 
 module NvLinkIC : InterConnect = struct
   let name = "nvlink_v4"
-  let bandwidth = 900.0 *. Int.to_float Units.giga_b
+  let bandwidth = 900.0 *. Int64.to_float Units.giga_b
   let num_links = 18
 
   let link_bandwidth low_level_links =
@@ -62,7 +62,7 @@ end
 
 module InfinibandIC : InterConnect = struct
   let name = "ConnectX-IB"
-  let bandwidth = 400.0 *. Int.to_float Units.giga_b
+  let bandwidth = 400.0 *. Int64.to_float Units.giga_b
   let num_links = 18
 
   let link_bandwidth low_level_links =

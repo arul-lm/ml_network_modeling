@@ -55,13 +55,16 @@ let matmul x w =
   assert (kx = kw);
   let out = Tensor.make ~node ~device ~dtype out_shape |> Option.value_exn in
   let s = tensor_stats out in
-  let flops = List.fold (kx :: out_shape) ~init:1 ~f:Int.( * ) in
+  let flops =
+    List.fold (kx :: out_shape) ~init:Int64.one ~f:(fun acc x ->
+      Int64.(acc * Int64.of_int x))
+  in
   out, Stats.add_flops s flops
 ;;
 
 let matmul_lat (module D : Device) (module DT : Dtype) flops m_reads =
   let c_lat =
-    Int.to_float flops /. (D.tf32_tflops *. Int.to_float DT.nbytes *. D.mvp_util)
+    Int64.to_float flops /. (D.tf32_tflops *. Int.to_float DT.nbytes *. D.mvp_util)
   in
   let m_reads = m_reads *. Int.to_float DT.nbytes in
   let m_tput = D.mem_bw *. D.mvp_util in

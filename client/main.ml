@@ -86,18 +86,21 @@ let handle_spec_change s =
   ()
 ;;
 
-let fetch_spec spec_name =
+let fetch_spec spec_name update_fn =
   let open Effect.Let_syntax in
   let%bind response =
     Effect.of_deferred_fun
       (fun p -> Async_js.Http.get ~arguments:[] p)
       ("/recipe/" ^ spec_name ^ ".vg.json")
   in
-  if Core.Or_error.is_error response
-  then Effect.Ignore
-  else (
-    let spec = Core.Or_error.ok_exn response in
-    Effect.return (handle_spec_change spec))
+  let%bind _ =
+    if Core.Or_error.is_error response
+    then Effect.Ignore
+    else (
+      let spec = Core.Or_error.ok_exn response in
+      Effect.return (handle_spec_change spec))
+  in
+  update_fn ()
 ;;
 
 let component =
@@ -113,8 +116,18 @@ let component =
     let nodes = Node_intf.make_nodes node_count in
     let model = Model.get_model mdl in
     let wl = Model.to_workload N.dev_count mdl in
-    Serialize.serialize_clos_dgx nodes model wl ~file_name:"data/clos.json";
-    fetch_spec "graph"
+    let node_data, link_data =
+      Serialize.serialize_clos_dgx nodes model wl ~file_name:"data/clos.json"
+    in
+    let update_fn () =
+      Effect.of_deferred_fun
+        (fun _ ->
+          let%map.Deferred () = Async_kernel.after (Time_ns.Span.of_sec 1.) in
+          Vega.update_dataset ~name:"node-data" (Vega.json_parse node_data);
+          Vega.update_dataset ~name:"link-data" (Vega.json_parse link_data))
+        ()
+    in
+    fetch_spec "graph" update_fn
     (* let mpar = Model.get_model_par mdl |> Int.to_string in *)
     (* Effect.print_s (Sexplib0.Sexp.Atom ("loading graph..." ^ L2.name)) *)
   in

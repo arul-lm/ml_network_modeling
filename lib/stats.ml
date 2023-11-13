@@ -5,7 +5,7 @@ type t =
   { node : (module Node) node_data
   ; device : (module Device) device_data
   ; mem_used : float
-  ; flops : int
+  ; flops : int64
   ; op_time : float
   ; comm_time : float
   }
@@ -17,7 +17,7 @@ let add_node_stats ~node ~device ~mem_used ~flops ~op_time ~comm_time =
 let mem_used t = t.mem_used
 
 let empty node device =
-  add_node_stats ~node ~device ~mem_used:0. ~flops:0 ~op_time:0. ~comm_time:0.
+  add_node_stats ~node ~device ~mem_used:0. ~flops:Int64.zero ~op_time:0. ~comm_time:0.
 ;;
 
 let stats_nodes nodes (module N : Node) =
@@ -36,7 +36,7 @@ let ( + ) t1 t2 =
   else
     { t1 with
       mem_used = t1.mem_used +. t2.mem_used
-    ; flops = t1.flops + t2.flops
+    ; flops = Int64.add t1.flops t2.flops
     ; op_time = t1.op_time +. t2.op_time
     ; comm_time = t1.comm_time +. t2.comm_time
     }
@@ -45,7 +45,7 @@ let ( + ) t1 t2 =
 let ( * ) t n =
   { t with
     mem_used = t.mem_used *. n
-  ; flops = t.flops * Int.of_float n
+  ; flops = Int64.mul t.flops (Int64.of_float n)
   ; op_time = t.op_time *. n
   ; comm_time = t.comm_time *. n
   }
@@ -56,7 +56,7 @@ let node t = t.node
 
 let add_flops t flops =
   let ff = t.flops in
-  let flops = Int.add flops ff in
+  let flops = Int64.add flops ff in
   { t with flops }
 ;;
 
