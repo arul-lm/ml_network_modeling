@@ -16,3 +16,6 @@ run:
 
 install:
 	opam install . --deps-only
+
+oli:
+	@dune exec oli
