@@ -5,7 +5,6 @@ module E = Form.Elements
 open Ml_network_modeling
 open! Async_kernel
 open! Async_js
-(* open! Js_of_ocaml *)
 
 module ModelParams = struct
   type t =
@@ -106,7 +105,7 @@ let fetch_spec spec_name update_fn =
 let component =
   let%map.Computation dyn = topo_form
   and model = model_form in
-  let handle_click _e =
+  let handle_click btn_type _e =
     let topo = Form.value_or_default dyn ~default:Topo.Nvidia_DGX_Fat_Tree in
     let mdl = Form.value_or_default model ~default:(Model.Opt13b default_model_params) in
     let (module L2) = Topo.to_l2 topo in
@@ -116,6 +115,18 @@ let component =
     let nodes = Node_intf.make_nodes node_count in
     let model = Model.get_model mdl in
     let wl = Model.to_workload N.dev_count mdl in
+    let update_fn = match btn_type with
+    | "time" ->
+      let time_stats = Serialize.serialize_time nodes model wl in
+      let update_fn () =
+      Effect.of_deferred_fun
+        (fun _ ->
+          let%map.Deferred () = Async_kernel.after (Time_ns.Span.of_sec 1.) in
+          Vega.update_dataset ~name:"time-stats" (Vega.json_parse time_stats);
+          ) ()
+      in
+      update_fn
+    | _ ->
     let node_data, link_data =
       Serialize.serialize_clos_dgx nodes model wl ~file_name:"data/clos.json"
     in
@@ -127,19 +138,26 @@ let component =
           Vega.update_dataset ~name:"link-data" (Vega.json_parse link_data))
         ()
     in
-    fetch_spec "graph" update_fn
-    (* let mpar = Model.get_model_par mdl |> Int.to_string in *)
-    (* Effect.print_s (Sexplib0.Sexp.Atom ("loading graph..." ^ L2.name)) *)
+    update_fn
+    in
+          fetch_spec btn_type update_fn
   in
   let graph_btn =
     Vdom.Node.button
-      ~attrs:[ Vdom.Attr.on_click handle_click ]
+      ~attrs:[ Vdom.Attr.on_click (handle_click "graph")]
       [ Vdom.Node.Text "show graph" ]
   in
+  let time_btn =
+    Vdom.Node.button
+      ~attrs:[ Vdom.Attr.on_click (handle_click "time")]
+      [ Vdom.Node.Text "show time" ]
+  in
+  
   Vdom.Node.div
     [ Form.View.to_vdom (Form.view (Form.label "Select Topology" dyn))
     ; Form.View.to_vdom (Form.view (Form.label "Select Model" model))
     ; graph_btn
+    ; time_btn
     ]
 ;;
 

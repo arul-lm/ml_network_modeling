@@ -296,9 +296,28 @@ let serialize_comm model node_count device_count comm_ops ~f =
   |> Yojson.Safe.to_file "comms.json"
 ;;
 
+type time_stats =
+  { type_ : string
+  ; time : float
+  }
+[@@deriving yojson]
+
+let serialize_time nodes model wl =
+  let _comm_ops, stats_array =
+    Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
+  in
+  let stat = stats_array.(0).(0) in
+  let compute_time = Stats.op_time stat *. 2. in
+  let comm_time = Stats.comm_time stat in
+  let xs = [ { type_ = "compute"; time = compute_time }
+  ; { type_ = "comm"; time = comm_time }
+  ; { type_ = "total"; time = compute_time +. comm_time }
+  ] in
+  yojson_of_list (yojson_of_time_stats) xs |> Yojson.Safe.pretty_to_string
+    
+;;
+
 let serialize_clos_dgx nodes model wl ~file_name =
-  (* let model = Transformers.opt13b in *)
-  (* let wl = Transformer_wl.make ~batch_size:32 ~seq_len:512 ~mpar_factor:5 in *)
   let _comm_ops, stats_array =
     Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
   in
