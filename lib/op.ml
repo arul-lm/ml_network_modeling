@@ -163,3 +163,12 @@ let to_string = function
   | ComputeOp o -> comp_to_string o
   | CommOp o -> comm_to_string o
 ;;
+
+let append_id_to_comm_op id = function
+  | AllReduce (op_name, x, y, z) -> AllReduce (op_name ^ "_" ^ Int.to_string id, x, y, z)
+;;
+
+let append_id id = function
+  | CommOp o -> CommOp (append_id_to_comm_op id o)
+  | o -> o
+;;

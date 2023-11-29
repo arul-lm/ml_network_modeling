@@ -14,7 +14,7 @@ let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
   let s = Transformer_wl.seq_len wl in
   let e = Transformer.embed_dim t in
   let forward_pass = Op.forward N.device in
-  let comm_ops_ref : Op_intf.comm_op array option ref = ref None in
+  let comm_info_list : Op_intf.comm_info list ref = ref [] in
   let handle_node node =
     let { id = node_id; _ } = node in
     let handle_dev device =
@@ -52,10 +52,19 @@ let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
         a, Stats.(s1 + s2)
       in
       let _, fwd_stats = Array.fold ~init:(act, empty_stats) ~f:run_fwd comp_ops in
-      (* Comm ops *)
+      (* Comm ops - build comm_info *)
+      let device_uid = (node_id * N.dev_count) + device_id in
       let run_comm acc op = Stats.add_comm acc (comm_f op) in
-      if Option.is_none !comm_ops_ref then comm_ops_ref := Some comm_ops;
+      let add_comm_info (Op_intf.AllReduce (_, dev_involved, _, _) as op) =
+        let cur_dev_group = device_uid / dev_involved in
+        let offset = cur_dev_group * dev_involved in
+        let device_ids = List.init dev_involved ~f:(fun id -> offset + id) in
+        comm_info_list
+        := Op_intf.{ comm_op = op; src = device_uid; addrs = device_ids }
+           :: !comm_info_list
+      in
       let comm_stats = Array.fold ~init:empty_stats ~f:run_comm comm_ops in
+      Array.iter comm_ops ~f:add_comm_info;
       (* Stdlib.Printf.printf "Lat:%f\n" (Stats.op_time fwd_stats); *)
       (* Stdlib.Printf.printf "Comm:%f\n" (Stats.comm_time comm_stats); *)
       stats_array.(node_id).(device_id)
@@ -64,5 +73,5 @@ let load_transformer t (wl : Transformer_wl.t) (module N : Node) nodes ~comm_f =
     Array.iter ~f:handle_dev N.devices
   in
   Array.iter ~f:handle_node nodes;
-  Option.value_exn !comm_ops_ref, stats_array
+  List.rev !comm_info_list, stats_array
 ;;

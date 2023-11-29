@@ -18,6 +18,12 @@ type compute_op =
 
 type comm_op = AllReduce of string * int * int * Tensor.t
 
+type comm_info =
+  { comm_op : comm_op
+  ; src : int
+  ; addrs : int list
+  }
+
 (* Need type hierarchy. Ops with weights and Ops only used in forward/backward passes *)
 type op_type =
   | ComputeOp of compute_op
@@ -36,4 +42,5 @@ module type Op = sig
   val ( & ) : no_param_op -> t
   val ( % ) : comm_op -> t
   val to_string : t -> string
+  val append_id : int -> t -> t
 end

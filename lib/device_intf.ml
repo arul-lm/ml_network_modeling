@@ -26,7 +26,7 @@ end
 (* Instance specific info *)
 type 'a device_data = { id : int }
 
-let make_h100 n =
+let make_device n =
   let result : (module Device) device_data array = Array.init n (fun id -> { id }) in
   result
 ;;

@@ -69,7 +69,7 @@ let build t mpar (batch, seq) (node, node_count) (device, dev_count) =
   let total_ops =
     Base.Array.init
       (l_ops_count * num_layers t)
-      ~f:(fun idx -> layer_ops.(idx mod l_ops_count))
+      ~f:(fun idx -> layer_ops.(idx mod l_ops_count) |> Op.append_id idx)
   in
   (* TODO: Replace last dim should be vocab *)
   let total_devices = node_count * dev_count in
