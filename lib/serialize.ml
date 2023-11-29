@@ -270,7 +270,7 @@ let vertex_data_of_node (module N : Node) (node_stats : Stats.t array) =
   make_vertices cx cy rows row_off col_off start group vertex_type D.name devices
 ;;
 
-let serialize_comm model node_count device_count comm_ops ~f =
+let serialize_comm model ~node_count ~device_count comm_ops ~f ~file_path =
   let open Base in
   let ht = Hashtbl.create ~size:32 (module String) in
   let handle_comm = function
@@ -295,7 +295,7 @@ let serialize_comm model node_count device_count comm_ops ~f =
     make_comm_stats ~model ~node_count ~device_count ~comm_op_stats ()
     |> yojson_of_comm_stats
   in
-  Yojson.Safe.to_file "comms.json" cs;
+  Option.iter file_path ~f:(fun file_path -> Yojson.Safe.to_file file_path cs);
   Yojson.Safe.pretty_to_string (yojson_of_list yojson_of_comm_op_stats comm_op_stats)
 ;;
 
@@ -321,17 +321,18 @@ let serialize_time nodes model wl =
   yojson_of_list yojson_of_time_stats xs |> Yojson.Safe.pretty_to_string
 ;;
 
-let serialize_comm_time nodes model wl =
+let serialize_comm_time nodes model wl ~file_path =
   let comm_ops, _stats_array =
     Orchestrator.load_transformer model wl DGX_L1.node nodes ~comm_f:Clos.handle_comm
   in
   let (module N) = DGX_L1.node in
   serialize_comm
     (Transformer.name model)
-    (Array.length nodes)
-    N.dev_count
+    ~node_count:(Array.length nodes)
+    ~device_count:N.dev_count
     comm_ops
     ~f:Clos.handle_comm
+    ~file_path
 ;;
 
 let serialize_clos_dgx nodes model wl ~file_name =

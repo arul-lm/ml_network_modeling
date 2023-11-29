@@ -118,7 +118,7 @@ let component =
     let update_fn =
       match btn_type with
       | "reduce" ->
-        let reduce_stats = Serialize.serialize_comm_time nodes model wl in
+        let reduce_stats = Serialize.serialize_comm_time nodes model wl ~file_path:None in
         let update_fn () =
           Effect.of_deferred_fun
             (fun _ ->
